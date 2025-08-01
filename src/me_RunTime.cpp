@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-03-26
+  Last mod.: 2025-08-01
 */
 
 /*
@@ -168,15 +168,16 @@ void me_RunTime::Delay(
   using
     me_Timestamp::TTimestamp,
     me_Timestamp::Add,
-    me_Timestamp::Compare;
+    me_Timestamp::IsGreaterOrEqual,
+    me_Timestamp::IsLess;
 
   TTimestamp EndTs = GetTime();
   TBool IsWrapped = !Add(&EndTs, DeltaTs);
 
   if (IsWrapped)
-    while (Compare(GetTime(), EndTs) >= 0);
+    while (IsGreaterOrEqual(GetTime(), EndTs));
 
-  while (Compare(GetTime(), EndTs) < 0);
+  while (IsLess(GetTime(), EndTs));
 }
 
 /*

@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-03-02
+  Last mod.: 2025-08-01
 */
 
 #include <me_RunTime.h>
@@ -35,7 +35,8 @@ void setup()
 
   pinMode(DebugPin, OUTPUT);
 
-  Console.Print("Init done.");
+  Console.Print("[me_RunTime] Delay() demo");
+  Console.Print("Infinite loop that toggles LED.");
 }
 
 void loop()
@@ -49,3 +50,8 @@ void loop()
 
   PrintTimestamp(me_RunTime::GetTime());
 }
+
+/*
+  2025-03
+  2025-08-01
+*/
