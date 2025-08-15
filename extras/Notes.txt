@@ -1,0 +1,18 @@
+( Sleep vs Delay
+
+  There are two common names for do-nothing function "sleep" and
+  "delay". For me they are quite different in details.
+
+  Sleep
+    - you wanna save battery
+    - you have nothing to do now
+    - you gonna sleep for a long time (seconds)
+    - you've set-up signals that will wake you
+
+  Delay
+    - you want high temporal precision
+    - you're doing important timing job now
+    - stage is not long (sub-seconds)
+    - you've disabled all interrupts
+
+) 2025-08-15
