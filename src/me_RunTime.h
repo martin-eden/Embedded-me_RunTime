@@ -12,14 +12,11 @@
 
 namespace me_RunTime
 {
-  void Setup();
   void Start();
   void Stop();
 
   me_Timestamp::TTimestamp GetTime();
   void SetTime(me_Timestamp::TTimestamp);
-
-  void Delay(me_Timestamp::TTimestamp);
 
   namespace Freetown
   {
@@ -29,4 +26,5 @@ namespace me_RunTime
 
 /*
   2025-03-02
+  2025-09-12 Removed Delay(), we have [me_Delays] now
 */

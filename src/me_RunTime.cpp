@@ -13,18 +13,17 @@
   At interrupt handler we're advancing run time.
 
   For special case of fine tracking milliseconds, we're providing
-  GetMicros(). There is trade-off between overhead for time-keeping
-  and time resolution. GetMicros() at current implementation
-  has granularity of half us.
+  GetMicros(). It has granularity of 0.5 us.
 */
 
 #include <me_RunTime.h>
 
 #include <me_BaseTypes.h>
-#include <me_Counters.h>
 #include <me_Timestamp.h>
+#include <me_Counters.h>
 
-#include <Arduino.h>
+#include <avr/common.h> // SREG
+#include <avr/interrupt.h> // cli()
 
 using namespace me_RunTime;
 
@@ -93,40 +92,29 @@ void __vector_11()
 }
 
 /*
-  Setup counter for milliseconds tracking
+  Start time tracking
 
-  Sets counter mark A to 1 ms (for 16 MHz at slowdown by 8)
+  Sets counter speed and limit and "limit reached" interrupt.
+  Starts counting from zero.
 */
-void me_RunTime::Setup()
+void me_RunTime::Start()
 {
   const me_Counters::TAlgorithm_Counter2 TickToValue =
     me_Counters::TAlgorithm_Counter2::Count_ToMarkA;
   const TUint_2 TicksPerMs = 2000;
-
-  me_Counters::TCounter2 Rtc;
-
-  Stop();
-
-  Rtc.SetAlgorithm(TickToValue);
-  *Rtc.Current = 0;
-  *Rtc.MarkA = TicksPerMs - 1;
-
-  Start();
-}
-
-/*
-  Start time tracking
-
-  Sets counter speed and enables mark A interrupt.
-*/
-void me_RunTime::Start()
-{
   const TUint_1 SlowByEight =
     (TUint_1) me_Counters::TDriveSource_Counter2::Internal_SlowBy2Pow3;
 
   me_Counters::TCounter2 Rtc;
 
+  Stop();
+
   Rtc.Control->DriveSource = SlowByEight;
+
+  Rtc.SetAlgorithm(TickToValue);
+  *Rtc.Current = 0;
+  *Rtc.MarkA = TicksPerMs - 1;
+
   Rtc.Interrupts->OnMarkA = true;
 }
 
@@ -147,32 +135,6 @@ void me_RunTime::Stop()
 }
 
 /*
-  Delay for given interval of time
-
-  Actually it's derived function that should be in separate
-  module but it's damn handy to be left in example and we
-  don't want to create separate module for it now.
-*/
-void me_RunTime::Delay(
-  me_Timestamp::TTimestamp DeltaTs
-)
-{
-  using
-    me_Timestamp::TTimestamp,
-    me_Timestamp::Add,
-    me_Timestamp::IsGreaterOrEqual,
-    me_Timestamp::IsLess;
-
-  TTimestamp EndTs = GetTime();
-  TBool IsWrapped = !Add(&EndTs, DeltaTs);
-
-  if (IsWrapped)
-    while (IsGreaterOrEqual(GetTime(), EndTs));
-
-  while (IsLess(GetTime(), EndTs));
-}
-
-/*
   Return microseconds part
 */
 TUint_2 me_RunTime::Freetown::GetMicros()
@@ -181,8 +143,7 @@ TUint_2 me_RunTime::Freetown::GetMicros()
 
   return *Rtc.Current / 2; // (1)
   /*
-    [1]: " / 2" - hardcoded const for 2 kHz. Actually it depends of
-      <TicksPerMs> and should be "* 1000 / TicksPerMs". But damned
+    [1]: " / 2" - should be "* 1000 / TicksPerMs". But damned
       GCC will first multiply ui2 by 1000 and then divide by 2000,
       trimming it.
   */
