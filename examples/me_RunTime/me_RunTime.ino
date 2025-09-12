@@ -2,56 +2,64 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-08-01
+  Last mod.: 2025-09-12
 */
 
 #include <me_RunTime.h>
-#include <me_Timestamp.h>
 
 #include <me_BaseTypes.h>
-#include <me_Uart.h>
 #include <me_Console.h>
 
-const TUint_1 DebugPin = 13;
+#include <me_Timestamp.h>
+#include <me_Delays.h>
+#include <me_DebugPrints.h>
 
 void PrintTimestamp(
+  TAsciiz Annotation,
   me_Timestamp::TTimestamp Ts
 )
 {
-  Console.Write("Timestamp (");
-  Console.Print(Ts.KiloS);
-  Console.Print(Ts.S);
-  Console.Print(Ts.MilliS);
-  Console.Print(Ts.MicroS);
-  Console.Write(")");
-  Console.EndLine();
+  Console.Write(Annotation);
+  Console.Write(" ");
+  me_DebugPrints::PrintDuration(Ts);
+}
+
+void GetTimeTest()
+{
+  const me_Timestamp::TTimestamp EndTime = { 0, 24, 0, 0 };
+  me_Timestamp::TTimestamp CurTime;
+
+  PrintTimestamp("End time", EndTime);
+
+  me_RunTime::Start();
+
+  while (true)
+  {
+    CurTime = me_RunTime::GetTime();
+    PrintTimestamp("Current time", CurTime);
+    if (me_Timestamp::IsGreater(me_RunTime::GetTime(), EndTime))
+      break;
+    me_Delays::Delay_S(3);
+  }
+
+  Console.Print("GetTimeTest() done");
 }
 
 void setup()
 {
-  me_Uart::Init(me_Uart::Speed_115k_Bps);
+  Console.Init();
 
-  me_RunTime::Setup();
-
-  pinMode(DebugPin, OUTPUT);
-
-  Console.Print("[me_RunTime] Delay() demo");
-  Console.Print("Infinite loop that toggles LED.");
+  Console.Print("( [me_RunTime] test");
+  GetTimeTest();
+  Console.Print(") Done");
 }
 
 void loop()
 {
-  using
-    me_RunTime::Delay;
-
-  Delay({ 0, 1, 760, 50 });
-
-  digitalWrite(DebugPin, !digitalRead(DebugPin));
-
-  PrintTimestamp(me_RunTime::GetTime());
 }
 
 /*
   2025-03
   2025-08-01
+  2025-09-12
 */
