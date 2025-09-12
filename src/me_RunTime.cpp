@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-08-01
+  Last mod.: 2025-09-12
 */
 
 /*
@@ -71,26 +71,20 @@ void me_RunTime::SetTime(
 }
 
 /*
-  Updating timestamp on new millisecond
-
-  Just adds 1 ms to timestamp.
+  Advance timestamp by one millisecond
 */
 void OnNextMs()
 {
-  using
-    me_Timestamp::TTimestamp,
-    me_Timestamp::Add;
+  const me_Timestamp::TTimestamp Ms = { 0, 0, 1, 0 };
 
-  const TTimestamp Ms = { 0, 0, 1, 0 };
+  me_Timestamp::TTimestamp CurTime;
 
-  TTimestamp CurTime = GetTime();
-
-  Add(&CurTime, Ms);
-
+  CurTime = GetTime();
+  me_Timestamp::Add(&CurTime, Ms);
   SetTime(CurTime);
 }
 
-// Interrupt 11 is for counter 2 mark A event. Expected to trigger every ms
+// Interrupt 11 is for counter 2 mark A event
 extern "C" void __vector_11() __attribute__((signal, used));
 
 void __vector_11()
@@ -105,17 +99,15 @@ void __vector_11()
 */
 void me_RunTime::Setup()
 {
+  const me_Counters::TAlgorithm_Counter2 TickToValue =
+    me_Counters::TAlgorithm_Counter2::Count_ToMarkA;
   const TUint_2 TicksPerMs = 2000;
 
-  using
-    me_Counters::TCounter2,
-    me_Counters::TAlgorithm_Counter2;
-
-  TCounter2 Rtc;
+  me_Counters::TCounter2 Rtc;
 
   Stop();
 
-  Rtc.SetAlgorithm(TAlgorithm_Counter2::Count_ToMarkA);
+  Rtc.SetAlgorithm(TickToValue);
   *Rtc.Current = 0;
   *Rtc.MarkA = TicksPerMs - 1;
 
@@ -129,12 +121,12 @@ void me_RunTime::Setup()
 */
 void me_RunTime::Start()
 {
-  using
-    me_Counters::TCounter2,
-    me_Counters::TDriveSource_Counter2;
+  const TUint_1 SlowByEight =
+    (TUint_1) me_Counters::TDriveSource_Counter2::Internal_SlowBy2Pow3;
 
-  TCounter2 Rtc;
-  Rtc.Control->DriveSource = (TUint_1) TDriveSource_Counter2::Internal_SlowBy2Pow3;
+  me_Counters::TCounter2 Rtc;
+
+  Rtc.Control->DriveSource = SlowByEight;
   Rtc.Interrupts->OnMarkA = true;
 }
 
@@ -145,12 +137,12 @@ void me_RunTime::Start()
 */
 void me_RunTime::Stop()
 {
-  using
-    me_Counters::TCounter2,
-    me_Counters::TDriveSource_Counter2;
+  const TUint_1 Disabled =
+    (TUint_1) me_Counters::TDriveSource_Counter2::None;
 
-  TCounter2 Rtc;
-  Rtc.Control->DriveSource = (TUint_1) TDriveSource_Counter2::None;
+  me_Counters::TCounter2 Rtc;
+
+  Rtc.Control->DriveSource = Disabled;
   Rtc.Interrupts->OnMarkA = false;
 }
 
@@ -198,4 +190,5 @@ TUint_2 me_RunTime::Freetown::GetMicros()
 
 /*
   2025-03-02
+  2025-09-12
 */
