@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-12
+  Last mod.: 2025-09-13
 */
 
 /*
@@ -82,9 +82,6 @@ void OnNextMs()
   me_Timestamp::Add(&CurTime, Ms);
   SetTime(CurTime);
 }
-
-// Interrupt 11 is for counter 2 mark A event
-extern "C" void __vector_11() __attribute__((signal, used));
 
 void __vector_11()
 {

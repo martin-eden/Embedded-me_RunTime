@@ -2,7 +2,11 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-03-02
+  Last mod.: 2025-09-13
+*/
+
+/*
+  Implementation occupies timer 2 (16-bit counter)
 */
 
 #pragma once
@@ -23,6 +27,9 @@ namespace me_RunTime
     TUint_2 GetMicros();
   }
 }
+
+// Time update routine (counter 2 mark A event)
+extern "C" void __vector_11() __attribute__((signal, used));
 
 /*
   2025-03-02
