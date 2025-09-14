@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-12
+  Last mod.: 2025-09-14
 */
 
 #include <me_RunTime.h>
@@ -22,6 +22,7 @@ void PrintTimestamp(
   Console.Write(Annotation);
   Console.Write(" ");
   me_DebugPrints::PrintDuration(Ts);
+  Console.EndLine();
 }
 
 void GetTimeTest()
