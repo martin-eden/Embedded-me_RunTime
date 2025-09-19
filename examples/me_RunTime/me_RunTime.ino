@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-14
+  Last mod.: 2025-09-19
 */
 
 #include <me_RunTime.h>
@@ -20,14 +20,13 @@ void PrintTimestamp(
 )
 {
   Console.Write(Annotation);
-  Console.Write(" ");
   me_DebugPrints::PrintDuration(Ts);
   Console.EndLine();
 }
 
 void GetTimeTest()
 {
-  const me_Timestamp::TTimestamp EndTime = { 0, 24, 0, 0 };
+  const me_Timestamp::TTimestamp EndTime = { 0, 18, 0, 0 };
   me_Timestamp::TTimestamp CurTime;
 
   PrintTimestamp("End time", EndTime);
@@ -42,8 +41,6 @@ void GetTimeTest()
       break;
     me_Delays::Delay_S(3);
   }
-
-  Console.Print("GetTimeTest() done");
 }
 
 void setup()
@@ -51,7 +48,9 @@ void setup()
   Console.Init();
 
   Console.Print("( [me_RunTime] test");
+  Console.Indent();
   GetTimeTest();
+  Console.Unindent();
   Console.Print(") Done");
 }
 
@@ -63,4 +62,5 @@ void loop()
   2025-03
   2025-08-01
   2025-09-12
+  2025-09-19
 */
