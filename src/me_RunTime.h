@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-13
+  Last mod.: 2025-09-20
 */
 
 /*
@@ -12,15 +12,15 @@
 #pragma once
 
 #include <me_BaseTypes.h>
-#include <me_Timestamp.h>
+#include <me_Duration.h>
 
 namespace me_RunTime
 {
   void Start();
   void Stop();
 
-  me_Timestamp::TTimestamp GetTime();
-  void SetTime(me_Timestamp::TTimestamp);
+  me_Duration::TDuration GetTime();
+  void SetTime(me_Duration::TDuration);
 
   namespace Freetown
   {

@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-19
+  Last mod.: 2025-09-20
 */
 
 #include <me_RunTime.h>
@@ -10,13 +10,13 @@
 #include <me_BaseTypes.h>
 #include <me_Console.h>
 
-#include <me_Timestamp.h>
+#include <me_Duration.h>
 #include <me_Delays.h>
 #include <me_DebugPrints.h>
 
 void PrintTimestamp(
   TAsciiz Annotation,
-  me_Timestamp::TTimestamp Ts
+  me_Duration::TDuration Ts
 )
 {
   Console.Write(Annotation);
@@ -26,8 +26,8 @@ void PrintTimestamp(
 
 void GetTimeTest()
 {
-  const me_Timestamp::TTimestamp EndTime = { 0, 18, 0, 0 };
-  me_Timestamp::TTimestamp CurTime;
+  const me_Duration::TDuration EndTime = { 0, 18, 0, 0 };
+  me_Duration::TDuration CurTime;
 
   PrintTimestamp("End time", EndTime);
 
@@ -37,7 +37,7 @@ void GetTimeTest()
   {
     CurTime = me_RunTime::GetTime();
     PrintTimestamp("Current time", CurTime);
-    if (me_Timestamp::IsGreater(me_RunTime::GetTime(), EndTime))
+    if (me_Duration::IsGreater(me_RunTime::GetTime(), EndTime))
       break;
     me_Delays::Delay_S(3);
   }

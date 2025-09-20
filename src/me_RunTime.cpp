@@ -2,11 +2,11 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-13
+  Last mod.: 2025-09-20
 */
 
 /*
-  We're using "timestamp" record for time keeping. This record
+  We're using "duration" record for time keeping. This record
   is only accessed by GetTime() and SetTime().
 
   We're setting hardware counter to emit interrupt every millisecond.
@@ -19,7 +19,7 @@
 #include <me_RunTime.h>
 
 #include <me_BaseTypes.h>
-#include <me_Timestamp.h>
+#include <me_Duration.h>
 #include <me_Counters.h>
 
 #include <avr/common.h> // SREG
@@ -27,14 +27,14 @@
 
 using namespace me_RunTime;
 
-volatile me_Timestamp::TTimestamp RunTime = { 0, 0, 0, 0 };
+volatile me_Duration::TDuration RunTime = { 0, 0, 0, 0 };
 
 /*
-  Get time as timestamp record
+  Get time as duration record
 */
-me_Timestamp::TTimestamp me_RunTime::GetTime()
+me_Duration::TDuration me_RunTime::GetTime()
 {
-  me_Timestamp::TTimestamp Result;
+  me_Duration::TDuration Result;
 
   TUint_1 PrevSreg = SREG;
 
@@ -51,10 +51,10 @@ me_Timestamp::TTimestamp me_RunTime::GetTime()
 }
 
 /*
-  Set time as timestamp record
+  Set time as duration record
 */
 void me_RunTime::SetTime(
-  me_Timestamp::TTimestamp Ts
+  me_Duration::TDuration Ts
 )
 {
   TUint_1 PrevSreg = SREG;
@@ -70,16 +70,16 @@ void me_RunTime::SetTime(
 }
 
 /*
-  Advance timestamp by one millisecond
+  Advance duration by one millisecond
 */
 void OnNextMs()
 {
-  const me_Timestamp::TTimestamp Ms = { 0, 0, 1, 0 };
+  const me_Duration::TDuration Ms = { 0, 0, 1, 0 };
 
-  me_Timestamp::TTimestamp CurTime;
+  me_Duration::TDuration CurTime;
 
   CurTime = GetTime();
-  me_Timestamp::Add(&CurTime, Ms);
+  me_Duration::Add(&CurTime, Ms);
   SetTime(CurTime);
 }
 
