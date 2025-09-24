@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-20
+  Last mod.: 2025-09-24
 */
 
 /*
@@ -16,6 +16,7 @@
 
 namespace me_RunTime
 {
+  void Init();
   void Start();
   void Stop();
 
@@ -28,10 +29,9 @@ namespace me_RunTime
   }
 }
 
-// Time update routine (counter 2 mark A event)
-extern "C" void __vector_11() __attribute__((signal, used));
-
 /*
   2025-03-02
   2025-09-12 Removed Delay(), we have [me_Delays] now
+  2025-09-23
+  2025-09-24
 */

@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-20
+  Last mod.: 2025-09-24
 */
 
 /*
@@ -14,6 +14,9 @@
 
   For special case of fine tracking milliseconds, we're providing
   GetMicros(). It has granularity of 0.5 us.
+
+  Mind that hardware counter runs even when interrupts are disabled.
+  So GetMicros() will advance if counter is not stopped.
 */
 
 #include <me_RunTime.h>
@@ -21,6 +24,7 @@
 #include <me_BaseTypes.h>
 #include <me_Duration.h>
 #include <me_Counters.h>
+#include <me_Interrupts.h>
 
 #include <avr/common.h> // SREG
 #include <avr/interrupt.h> // cli()
@@ -28,6 +32,7 @@
 using namespace me_RunTime;
 
 volatile me_Duration::TDuration RunTime = { 0, 0, 0, 0 };
+const me_Duration::TDuration OneMs = { 0, 0, 1, 0 };
 
 /*
   Get time as duration record
@@ -35,10 +40,16 @@ volatile me_Duration::TDuration RunTime = { 0, 0, 0, 0 };
 me_Duration::TDuration me_RunTime::GetTime()
 {
   me_Duration::TDuration Result;
+  TUint_1 PrevSreg;
+  me_Counters::TCounter2 Rtc;
+  TBool NeedsAdvancement;
 
-  TUint_1 PrevSreg = SREG;
+  Stop();
 
+  PrevSreg = SREG;
   cli();
+
+  NeedsAdvancement = Rtc.Status->GotMarkA;
 
   Result.KiloS = RunTime.KiloS;
   Result.S = RunTime.S;
@@ -46,6 +57,21 @@ me_Duration::TDuration me_RunTime::GetTime()
   Result.MicroS = Freetown::GetMicros();
 
   SREG = PrevSreg;
+
+  Start();
+
+  if (NeedsAdvancement)
+  {
+    /*
+      Damn, most likely we're called from another interrupt
+      handler with higher priority.
+
+      Our time needs to be advanced. But it is done in our handler.
+
+      Here we'll fix copy.
+    */
+    me_Duration::Add(&Result, OneMs);
+  }
 
   return Result;
 }
@@ -57,8 +83,9 @@ void me_RunTime::SetTime(
   me_Duration::TDuration Ts
 )
 {
-  TUint_1 PrevSreg = SREG;
+  TUint_1 PrevSreg;
 
+  PrevSreg = SREG;
   cli();
 
   RunTime.KiloS = Ts.KiloS;
@@ -70,55 +97,58 @@ void me_RunTime::SetTime(
 }
 
 /*
-  Advance duration by one millisecond
+  [Interrupt handler] Advance duration by one millisecond
 */
-void OnNextMs()
+void OnNextMs_I()
 {
-  const me_Duration::TDuration Ms = { 0, 0, 1, 0 };
-
   me_Duration::TDuration CurTime;
 
   CurTime = GetTime();
-  me_Duration::Add(&CurTime, Ms);
+  me_Duration::Add(&CurTime, OneMs);
   SetTime(CurTime);
 }
 
-void __vector_11()
-{
-  OnNextMs();
-}
-
 /*
-  Start time tracking
+  Setup counter for time tracking
 
   Sets counter speed and limit and "limit reached" interrupt.
-  Starts counting from zero.
+  Sets current value to zero.
 */
-void me_RunTime::Start()
+void me_RunTime::Init()
 {
   const me_Counters::TAlgorithm_Counter2 TickToValue =
     me_Counters::TAlgorithm_Counter2::Count_ToMarkA;
   const TUint_2 TicksPerMs = 2000;
-  const TUint_1 SlowByEight =
-    (TUint_1) me_Counters::TDriveSource_Counter2::Internal_SlowBy2Pow3;
 
   me_Counters::TCounter2 Rtc;
 
   Stop();
 
-  Rtc.Control->DriveSource = SlowByEight;
-
   Rtc.SetAlgorithm(TickToValue);
-  *Rtc.Current = 0;
   *Rtc.MarkA = TicksPerMs - 1;
+
+  *Rtc.Current = 0;
+
+  me_Interrupts::On_Counter2_ReachedMarkA = OnNextMs_I;
 
   Rtc.Interrupts->OnMarkA = true;
 }
 
 /*
-  Stop time tracking
+  Start time tracking
+*/
+void me_RunTime::Start()
+{
+  const TUint_1 SlowByEight =
+    (TUint_1) me_Counters::TDriveSource_Counter2::Internal_SlowBy2Pow3;
 
-  Does opposite things to Start().
+  me_Counters::TCounter2 Rtc;
+
+  Rtc.Control->DriveSource = SlowByEight;
+}
+
+/*
+  Stop time tracking
 */
 void me_RunTime::Stop()
 {
@@ -128,7 +158,6 @@ void me_RunTime::Stop()
   me_Counters::TCounter2 Rtc;
 
   Rtc.Control->DriveSource = Disabled;
-  Rtc.Interrupts->OnMarkA = false;
 }
 
 /*
@@ -149,4 +178,5 @@ TUint_2 me_RunTime::Freetown::GetMicros()
 /*
   2025-03-02
   2025-09-12
+  2025-09-24
 */

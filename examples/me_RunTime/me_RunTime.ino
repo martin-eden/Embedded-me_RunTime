@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-20
+  Last mod.: 2025-09-24
 */
 
 #include <me_RunTime.h>
@@ -31,6 +31,7 @@ void GetTimeTest()
 
   PrintTimestamp("End time", EndTime);
 
+  me_RunTime::Init();
   me_RunTime::Start();
 
   while (true)
@@ -41,6 +42,8 @@ void GetTimeTest()
       break;
     me_Delays::Delay_S(3);
   }
+
+  me_RunTime::Stop();
 }
 
 void setup()
