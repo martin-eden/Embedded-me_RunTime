@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-24
+  Last mod.: 2025-09-30
 */
 
 /*
@@ -63,8 +63,10 @@ me_Duration::TDuration me_RunTime::GetTime()
   if (NeedsAdvancement)
   {
     /*
-      Damn, most likely we're called from another interrupt
-      handler with higher priority.
+      Damn, we have pending interrupt for our time advancement.
+
+      Most likely we're called from another interrupt handler
+      with higher priority.
 
       Our time needs to be advanced. But it is done in our handler.
 
