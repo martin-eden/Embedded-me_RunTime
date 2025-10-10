@@ -2,7 +2,29 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-30
+  Last mod.: 2025-10-10
+*/
+
+/*
+  This implementation uses hardware counter 3 (named TC2 in datasheet).
+
+  Main reason for this are interrupts priorities: counter 3 interrupts
+  are served before counter 2 (and counter 1) interrupts. In interrupt
+  handler you want to have correct time.
+
+  Also it can tick from external signal and stay alive in most sleep
+  modes. And has best range of system clock scaling. Which makes me
+  think it's really designed for run time tracking.
+
+  Arduino framework uses:
+
+    * Counter 1 for time tracking
+
+      See <wiring.c>. I don't know why. Ask David Mellis from 2005.
+
+    * Counter 3 for tone() function
+
+      See <Tone.cpp>.
 */
 
 /*
@@ -13,10 +35,27 @@
   At interrupt handler we're advancing run time.
 
   For special case of fine tracking milliseconds, we're providing
-  GetMicros(). It has granularity of 0.5 us.
+  GetMicros(). It has granularity of 4 us.
 
   Mind that hardware counter runs even when interrupts are disabled.
   So GetMicros() will advance if counter is not stopped.
+*/
+
+/*
+  Counter is simple thing
+
+  It advances from from 0 to "Mark A" every "tick". "Tick" is scaled
+  system clock. When it reaches mark A we're getting hardware interrupt.
+
+  We want to set mark A to such value that it takes exactly
+  one milli-second to reach it (assuming 16 MHz main clock).
+*/
+
+/*
+  Logically we should set tick scaling, mark A and start value
+  in one routine. But here we're setting mark A and start value
+  in Init() and tick scaling in Start(). Because we have Stop()
+  which just sets tick scaling to infinity.
 */
 
 #include <me_RunTime.h>
@@ -41,7 +80,7 @@ me_Duration::TDuration me_RunTime::GetTime()
 {
   me_Duration::TDuration Result;
   TUint_1 PrevSreg;
-  me_Counters::TCounter2 Rtc;
+  me_Counters::TCounter3 Rtc;
   TBool NeedsAdvancement;
 
   Stop();
@@ -113,53 +152,61 @@ void OnNextMs_I()
 /*
   Setup counter for time tracking
 
-  Sets counter speed and limit and "limit reached" interrupt.
+  Sets counter mode, limit and "limit reached" interrupt.
   Sets current value to zero.
 */
 void me_RunTime::Init()
 {
-  const me_Counters::TAlgorithm_Counter2 TickToValue =
-    me_Counters::TAlgorithm_Counter2::Count_ToMarkA;
-  const TUint_2 TicksPerMs = 2000;
+  const me_Counters::TAlgorithm_Counter3 TickToMarkA =
+    me_Counters::TAlgorithm_Counter3::Count_ToMarkA;
+  const TUint_1 TicksPerMs = 250;
 
-  me_Counters::TCounter2 Rtc;
+  me_Counters::TCounter3 Rtc;
 
   Stop();
 
-  Rtc.SetAlgorithm(TickToValue);
+  Rtc.SetAlgorithm(TickToMarkA);
   *Rtc.MarkA = TicksPerMs - 1;
 
   *Rtc.Current = 0;
 
-  me_Interrupts::On_Counter2_ReachedMarkA = OnNextMs_I;
+  me_Interrupts::On_Counter3_ReachedMarkA = OnNextMs_I;
 
   Rtc.Interrupts->OnMarkA = true;
 }
 
 /*
   Start time tracking
+
+  Starts counter with fixed speed.
 */
 void me_RunTime::Start()
 {
-  const TUint_1 SlowByEight =
-    (TUint_1) me_Counters::TDriveSource_Counter2::Internal_SlowBy2Pow3;
+  /*
+    We want it count to 1 ms. That's 16000 system clocks.
+    16000 / 64 = 250. Neat byte value.
+  */
+  const TUint_1 SlowBy64 =
+    (TUint_1) me_Counters::TSpeed_Counter3::SlowBy2Pow6;
 
-  me_Counters::TCounter2 Rtc;
+  me_Counters::TCounter3 Rtc;
 
-  Rtc.Control->DriveSource = SlowByEight;
+  Rtc.Control->Speed = SlowBy64;
 }
 
 /*
   Stop time tracking
+
+  Disconnects counter from drive source.
 */
 void me_RunTime::Stop()
 {
   const TUint_1 Disabled =
-    (TUint_1) me_Counters::TDriveSource_Counter2::None;
+    (TUint_1) me_Counters::TSpeed_Counter3::None;
 
-  me_Counters::TCounter2 Rtc;
+  me_Counters::TCounter3 Rtc;
 
-  Rtc.Control->DriveSource = Disabled;
+  Rtc.Control->Speed = Disabled;
 }
 
 /*
@@ -167,13 +214,14 @@ void me_RunTime::Stop()
 */
 TUint_2 me_RunTime::Freetown::GetMicros()
 {
-  me_Counters::TCounter2 Rtc;
+  me_Counters::TCounter3 Rtc;
 
-  return *Rtc.Current / 2; // (1)
+  return *Rtc.Current * 4; // (1)
   /*
-    [1]: " / 2" - should be "* 1000 / TicksPerMs". But damned
-      GCC will first multiply ui2 by 1000 and then divide by 2000,
-      trimming it.
+    [1]: Should be "Current / TicksPerMs * 1000". But I've got
+      number trimming issues with GCC, so using literal number
+      here. (Pros: no fancy casts. Cons: must change every time
+      I change TicksPerMs.)
   */
 }
 
@@ -181,4 +229,5 @@ TUint_2 me_RunTime::Freetown::GetMicros()
   2025-03-02
   2025-09-12
   2025-09-24
+  2025-10-10 Switched to counter 3
 */

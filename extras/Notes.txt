@@ -1,6 +1,6 @@
 ( Sleep vs Delay
 
-  There are two common names for do-nothing function "sleep" and
+  There are two common names for do-nothing function: "sleep" and
   "delay". For me they are quite different in details.
 
   Sleep
@@ -11,8 +11,8 @@
 
   Delay
     - you want high temporal precision
-    - you're doing important timing job now
+    - you're doing important timing job right now
     - stage is not long (sub-seconds)
     - you've disabled all interrupts
 
-) 2025-08-15
+) 2025-08-15, 2025-10-10

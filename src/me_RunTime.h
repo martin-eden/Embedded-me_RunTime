@@ -2,11 +2,11 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-09-24
+  Last mod.: 2025-10-10
 */
 
 /*
-  Implementation occupies timer 2 (16-bit counter)
+  Implementation uses timer 3 (TC2)
 */
 
 #pragma once
