@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-10
+  Last mod.: 2025-10-19
 */
 
 /*
@@ -64,6 +64,7 @@
 #include <me_Duration.h>
 #include <me_Counters.h>
 #include <me_Interrupts.h>
+#include <me_HardwareClockScaling.h>
 
 #include <avr/common.h> // SREG
 #include <avr/interrupt.h> // cli()
@@ -157,17 +158,28 @@ void OnNextMs_I()
 */
 void me_RunTime::Init()
 {
+  const TUint_4 Freq_Hz = 1000;
   const me_Counters::TAlgorithm_Counter3 TickToMarkA =
     me_Counters::TAlgorithm_Counter3::Count_ToMarkA;
-  const TUint_1 TicksPerMs = 250;
 
+  me_HardwareClockScaling::TClockScalingOptions Spec;
+  me_HardwareClockScaling::TClockScale ClockScale;
   me_Counters::TCounter3 Rtc;
+
+  Spec.NumPrescalerValues = 1;
+  Spec.Prescales_PowOfTwo[0] = 6;
+  Spec.CounterNumBits = 8;
+
+  me_HardwareClockScaling::CalculateClockScale(
+    &ClockScale,
+    Freq_Hz,
+    Spec
+  );
 
   Stop();
 
   Rtc.SetAlgorithm(TickToMarkA);
-  *Rtc.MarkA = TicksPerMs - 1;
-
+  *Rtc.MarkA = ClockScale.CounterLimit;
   *Rtc.Current = 0;
 
   me_Interrupts::On_Counter3_ReachedMarkA = OnNextMs_I;
@@ -182,10 +194,6 @@ void me_RunTime::Init()
 */
 void me_RunTime::Start()
 {
-  /*
-    We want it count to 1 ms. That's 16000 system clocks.
-    16000 / 64 = 250. Neat byte value.
-  */
   const TUint_1 SlowBy64 =
     (TUint_1) me_Counters::TSpeed_Counter3::SlowBy2Pow6;
 
@@ -215,14 +223,15 @@ void me_RunTime::Stop()
 TUint_2 me_RunTime::Freetown::GetMicros()
 {
   me_Counters::TCounter3 Rtc;
+  TUint_4 CurrentMsPart;
 
-  return *Rtc.Current * 4; // (1)
-  /*
-    [1]: Should be "Current / TicksPerMs * 1000". But I've got
-      number trimming issues with GCC, so using literal number
-      here. (Pros: no fancy casts. Cons: must change every time
-      I change TicksPerMs.)
-  */
+  // Assert: Current <= Mark A
+
+  CurrentMsPart = (TUint_4) *Rtc.Current;
+  CurrentMsPart = CurrentMsPart * 1000;
+  CurrentMsPart = CurrentMsPart / ((TUint_4) *Rtc.MarkA + 1);
+
+  return (TUint_2) CurrentMsPart;
 }
 
 /*
@@ -230,4 +239,5 @@ TUint_2 me_RunTime::Freetown::GetMicros()
   2025-09-12
   2025-09-24
   2025-10-10 Switched to counter 3
+  2025-10-19
 */
