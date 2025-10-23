@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-19
+  Last mod.: 2025-10-23
 */
 
 /*
@@ -48,14 +48,7 @@
   system clock. When it reaches mark A we're getting hardware interrupt.
 
   We want to set mark A to such value that it takes exactly
-  one milli-second to reach it (assuming 16 MHz main clock).
-*/
-
-/*
-  Logically we should set tick scaling, mark A and start value
-  in one routine. But here we're setting mark A and start value
-  in Init() and tick scaling in Start(). Because we have Stop()
-  which just sets tick scaling to infinity.
+  one milli-second to reach it.
 */
 
 #include <me_RunTime.h>
@@ -71,20 +64,21 @@
 
 using namespace me_RunTime;
 
-volatile me_Duration::TDuration RunTime = { 0, 0, 0, 0 };
-const me_Duration::TDuration OneMs = { 0, 0, 1, 0 };
+volatile me_Duration::TDuration RunTime = me_Duration::Zero;
+const TUint_4 TimerFreq_Hz = 1000;
+const me_Duration::TDuration TimeAdvancement = { 0, 0, 1, 0 };
 
 /*
   Get time as duration record
+
+  Microseconds part is not filled, so precision is one millisecond.
 */
 me_Duration::TDuration me_RunTime::GetTime()
 {
   me_Duration::TDuration Result;
   TUint_1 PrevSreg;
-  me_Counters::TCounter3 Rtc;
   TBool NeedsAdvancement;
-
-  Stop();
+  me_Counters::TCounter3 Rtc;
 
   PrevSreg = SREG;
   cli();
@@ -94,11 +88,9 @@ me_Duration::TDuration me_RunTime::GetTime()
   Result.KiloS = RunTime.KiloS;
   Result.S = RunTime.S;
   Result.MilliS = RunTime.MilliS;
-  Result.MicroS = Freetown::GetMicros();
+  Result.MicroS = 0;
 
   SREG = PrevSreg;
-
-  Start();
 
   if (NeedsAdvancement)
   {
@@ -112,14 +104,45 @@ me_Duration::TDuration me_RunTime::GetTime()
 
       Here we'll fix copy.
     */
-    me_Duration::Add(&Result, OneMs);
+    me_Duration::Add(&Result, TimeAdvancement);
   }
 
   return Result;
 }
 
 /*
+  Get time with microsecond precision
+
+  Each use of this functions increases gap between real time and
+  tracked time.
+*/
+me_Duration::TDuration me_RunTime::GetTime_Precise()
+{
+  me_Duration::TDuration Result;
+  TUint_1 PrevSreg;
+  TUint_2 Micros;
+
+  PrevSreg = SREG;
+  cli();
+
+  Stop();
+
+  Micros = Freetown::GetMicros();
+
+  Start();
+
+  Result = GetTime();
+  Result.MicroS = Micros;
+
+  SREG = PrevSreg;
+
+  return Result;
+}
+
+/*
   Set time as duration record
+
+  Microseconds part is ignored.
 */
 void me_RunTime::SetTime(
   me_Duration::TDuration Ts
@@ -133,7 +156,7 @@ void me_RunTime::SetTime(
   RunTime.KiloS = Ts.KiloS;
   RunTime.S = Ts.S;
   RunTime.MilliS = Ts.MilliS;
-  RunTime.MicroS = Ts.MicroS;
+  RunTime.MicroS = 0;
 
   SREG = PrevSreg;
 }
@@ -146,75 +169,67 @@ void OnNextMs_I()
   me_Duration::TDuration CurTime;
 
   CurTime = GetTime();
-  me_Duration::Add(&CurTime, OneMs);
+  me_Duration::Add(&CurTime, TimeAdvancement);
   SetTime(CurTime);
 }
 
 /*
   Setup counter for time tracking
-
-  Sets counter mode, limit and "limit reached" interrupt.
-  Sets current value to zero.
 */
 void me_RunTime::Init()
 {
-  const TUint_4 Freq_Hz = 1000;
-  const me_Counters::TAlgorithm_Counter3 TickToMarkA =
-    me_Counters::TAlgorithm_Counter3::Count_ToMarkA;
+  /*
+    Sets counter mode, limit and "limit reached" interrupt.
+    Sets current value to zero.
+  */
 
-  me_HardwareClockScaling::TClockScalingOptions Spec;
+  me_HardwareClockScaling::TClockScaleSetting Spec;
   me_HardwareClockScaling::TClockScale ClockScale;
   me_Counters::TCounter3 Rtc;
 
-  Spec.NumPrescalerValues = 1;
-  Spec.Prescales_PowOfTwo[0] = 6;
+  Spec.Prescale_PowOfTwo = 6;
   Spec.CounterNumBits = 8;
 
-  me_HardwareClockScaling::CalculateClockScale(
-    &ClockScale,
-    Freq_Hz,
-    Spec
-  );
+  if (
+    !me_HardwareClockScaling::CalculateClockScale_Spec(
+      &ClockScale, TimerFreq_Hz, Spec
+    )
+  )
+    return;
 
   Stop();
 
-  Rtc.SetAlgorithm(TickToMarkA);
+  Rtc.SetAlgorithm(me_Counters::TAlgorithm_Counter3::Count_ToMarkA);
   *Rtc.MarkA = ClockScale.CounterLimit;
-  *Rtc.Current = 0;
-
   me_Interrupts::On_Counter3_ReachedMarkA = OnNextMs_I;
+
+  *Rtc.Current = 0;
 
   Rtc.Interrupts->OnMarkA = true;
 }
 
 /*
   Start time tracking
-
-  Starts counter with fixed speed.
 */
 void me_RunTime::Start()
 {
-  const TUint_1 SlowBy64 =
-    (TUint_1) me_Counters::TSpeed_Counter3::SlowBy2Pow6;
+  // Connects counter to clock source
 
   me_Counters::TCounter3 Rtc;
 
-  Rtc.Control->Speed = SlowBy64;
+  Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::SlowBy2Pow6;
 }
 
 /*
   Stop time tracking
-
-  Disconnects counter from drive source.
 */
 void me_RunTime::Stop()
 {
-  const TUint_1 Disabled =
-    (TUint_1) me_Counters::TSpeed_Counter3::None;
+  // Disconnects counter from clock source
 
   me_Counters::TCounter3 Rtc;
 
-  Rtc.Control->Speed = Disabled;
+  Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::None;
 }
 
 /*
@@ -235,9 +250,7 @@ TUint_2 me_RunTime::Freetown::GetMicros()
 }
 
 /*
-  2025-03-02
-  2025-09-12
-  2025-09-24
+  2025 # # #
   2025-10-10 Switched to counter 3
   2025-10-19
 */

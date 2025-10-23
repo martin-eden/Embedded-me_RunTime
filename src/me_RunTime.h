@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-10
+  Last mod.: 2025-10-23
 */
 
 /*
@@ -21,6 +21,8 @@ namespace me_RunTime
   void Stop();
 
   me_Duration::TDuration GetTime();
+  me_Duration::TDuration GetTime_Precise();
+
   void SetTime(me_Duration::TDuration);
 
   namespace Freetown
@@ -34,4 +36,5 @@ namespace me_RunTime
   2025-09-12 Removed Delay(), we have [me_Delays] now
   2025-09-23
   2025-09-24
+  2025-10-23
 */
