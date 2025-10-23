@@ -27,7 +27,7 @@ namespace me_RunTime
 
   namespace Freetown
   {
-    TUint_2 GetMicros();
+    TUint_2 CalcMicros(TUint_1 CounterValue, TUint_1 CounterLimit);
   }
 }
 

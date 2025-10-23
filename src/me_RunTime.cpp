@@ -120,21 +120,25 @@ me_Duration::TDuration me_RunTime::GetTime_Precise()
 {
   me_Duration::TDuration Result;
   TUint_1 PrevSreg;
-  TUint_2 Micros;
+  TUint_1 CounterValue;
+  TUint_1 CounterLimit;
+  me_Counters::TCounter3 Rtc;
 
   PrevSreg = SREG;
   cli();
 
   Stop();
 
-  Micros = Freetown::GetMicros();
+  Result = GetTime();
+  CounterValue = *Rtc.Current;
 
   Start();
 
-  Result = GetTime();
-  Result.MicroS = Micros;
-
   SREG = PrevSreg;
+
+  CounterLimit = *Rtc.MarkA;
+
+  Result.MicroS = Freetown::CalcMicros(CounterValue, CounterLimit);
 
   return Result;
 }
@@ -235,18 +239,25 @@ void me_RunTime::Stop()
 /*
   Return microseconds part
 */
-TUint_2 me_RunTime::Freetown::GetMicros()
+TUint_2 me_RunTime::Freetown::CalcMicros(
+  TUint_1 CounterValue,
+  TUint_1 CounterLimit
+)
 {
-  me_Counters::TCounter3 Rtc;
+  //*
   TUint_4 CurrentMsPart;
 
   // Assert: Current <= Mark A
 
-  CurrentMsPart = (TUint_4) *Rtc.Current;
-  CurrentMsPart = CurrentMsPart * 1000;
-  CurrentMsPart = CurrentMsPart / ((TUint_4) *Rtc.MarkA + 1);
+  CurrentMsPart = CounterValue;
+  CurrentMsPart = CurrentMsPart * TimerFreq_Hz;
+  CurrentMsPart = CurrentMsPart / ((TUint_4) CounterLimit + 1);
 
   return (TUint_2) CurrentMsPart;
+
+  //*/
+  // return (TUint_4) TimerFreq_Hz * CounterValue / (CounterLimit + 1);
+  // return (TUint_2) CounterValue << 2;
 }
 
 /*
