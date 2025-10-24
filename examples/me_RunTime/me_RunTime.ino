@@ -1,8 +1,8 @@
-// Delay() demo
+// [me_RunTime] test
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-23
+  Last mod.: 2025-10-24
 */
 
 #include <me_RunTime.h>
@@ -81,9 +81,6 @@ void loop()
 }
 
 /*
-  2025-03
-  2025-08-01
-  2025-09-12
-  2025-09-19
+  2025 # # # #
   2025-10-23
 */
