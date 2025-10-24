@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-23
+  Last mod.: 2025-10-24
 */
 
 /*
@@ -166,7 +166,7 @@ void me_RunTime::SetTime(
 }
 
 /*
-  [Interrupt handler] Advance duration by one millisecond
+  [Interrupt handler] Advance tracked time
 */
 void OnNextMs_I()
 {
