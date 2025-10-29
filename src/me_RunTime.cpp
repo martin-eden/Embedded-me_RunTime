@@ -77,13 +77,9 @@ me_Duration::TDuration me_RunTime::GetTime()
 {
   me_Duration::TDuration Result;
   TUint_1 PrevSreg;
-  TBool NeedsAdvancement;
-  me_Counters::TCounter3 Rtc;
 
   PrevSreg = SREG;
   cli();
-
-  NeedsAdvancement = Rtc.Status->GotMarkA;
 
   Result.KiloS = RunTime.KiloS;
   Result.S = RunTime.S;
@@ -91,21 +87,6 @@ me_Duration::TDuration me_RunTime::GetTime()
   Result.MicroS = 0;
 
   SREG = PrevSreg;
-
-  if (NeedsAdvancement)
-  {
-    /*
-      Damn, we have pending interrupt for our time advancement.
-
-      Most likely we're called from another interrupt handler
-      with higher priority.
-
-      Our time needs to be advanced. But it is done in our handler.
-
-      Here we'll fix copy.
-    */
-    me_Duration::Add(&Result, TimeAdvancement);
-  }
 
   return Result;
 }
@@ -135,6 +116,23 @@ me_Duration::TDuration me_RunTime::GetTime_Precise()
   Start();
 
   SREG = PrevSreg;
+
+  if (Rtc.Status->GotMarkA)
+  {
+    /*
+      Damn, we have pending interrupt for our time advancement.
+
+      Most likely we're called from another interrupt handler
+      with higher priority.
+
+      Our time needs to be advanced. But it is done in our handler.
+
+      Here we'll fix copy.
+    */
+    me_Duration::Add(&Result, TimeAdvancement);
+
+    CounterValue = *Rtc.Current;
+  }
 
   CounterLimit = *Rtc.MarkA;
 
