@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-24
+  Last mod.: 2025-10-28
 */
 
 /*
@@ -244,7 +244,7 @@ TUint_2 me_RunTime::Freetown::CalcMicros(
   TUint_1 CounterLimit
 )
 {
-  //*
+  /*
   TUint_4 CurrentMsPart;
 
   // Assert: Current <= Mark A
@@ -256,7 +256,7 @@ TUint_2 me_RunTime::Freetown::CalcMicros(
   return (TUint_2) CurrentMsPart;
 
   //*/
-  // return (TUint_4) TimerFreq_Hz * CounterValue / (CounterLimit + 1);
+  return (TUint_4) TimerFreq_Hz * CounterValue / (CounterLimit + 1);
   // return (TUint_2) CounterValue << 2;
 }
 
@@ -264,4 +264,5 @@ TUint_2 me_RunTime::Freetown::CalcMicros(
   2025 # # #
   2025-10-10 Switched to counter 3
   2025-10-19
+  2025-10-28
 */
