@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-24
+  Last mod.: 2025-10-29
 */
 
 #include <me_RunTime.h>
@@ -27,12 +27,12 @@ void PrintTimestamp(
 void MeasureTime_Test()
 {
   const TUint_1 NumRuns = 12;
-  const TUint_1 TestPinNumber = 7;
+  const TUint_1 TestPinNumber = 6;
   const me_Duration::TDuration Delay = { 0, 0, 80, 0 };
 
+  me_Duration::TDuration StartTime;
+  me_Duration::TDuration EndTime;
   me_Duration::TDuration CurTime;
-  me_Duration::TDuration PrevTime;
-  me_Duration::TDuration TimeDiff;
   me_Pins::TOutputPin TestPin;
   TUint_1 RunNumber;
 
@@ -41,25 +41,82 @@ void MeasureTime_Test()
   TestPin.Init(TestPinNumber);
   TestPin.Write(0);
 
-  PrevTime = me_Duration::Zero;
-
   for (RunNumber = 1; RunNumber <= NumRuns; ++RunNumber)
   {
-    TestPin.Write(1);
+    StartTime = me_RunTime::GetTime();
 
+    EndTime = StartTime;
+    me_Duration::Add(&EndTime, Delay);
+
+    TestPin.Write(1);
     do
     {
       CurTime = me_RunTime::GetTime();
-      // PrintTimestamp("CurTime", CurTime);
-      TimeDiff = CurTime;
-      me_Duration::Subtract(&TimeDiff, PrevTime);
-    } while (me_Duration::IsLessOrEqual(TimeDiff, Delay));
-
+    } while (me_Duration::IsLess(CurTime, EndTime));
     TestPin.Write(0);
 
-    PrintTimestamp("Delta", TimeDiff);
+    PrintTimestamp("StartTime", StartTime);
+    PrintTimestamp("EndTime", EndTime);
+    PrintTimestamp("CurTime", CurTime);
+    Console.Print("");
+  }
 
-    PrevTime = me_RunTime::GetTime();;
+  me_RunTime::Stop();
+}
+
+void DetectLargeDelays_InfTest()
+{
+  /*
+    Check that current time is not jumping forward more than
+    expected. (Time continuity test.)
+
+    We're using GetTime_Precise() here. In empty loop.
+    It will significantly slow down our time tracking vs
+    real-world time. But we don't care.
+  */
+
+  Console.Print("Starting infinite test to detect large delays..");
+
+  const me_Duration::TDuration Delay = { 0, 0, 1, 333 };
+  const me_Duration::TDuration AcceptedDiscrepancy = { 0, 0, 0, 220 };
+  const TUint_1 TestPinNumber = 6;
+
+  me_Duration::TDuration StartTime;
+  me_Duration::TDuration EndTime;
+  me_Duration::TDuration CurTime;
+  me_Duration::TDuration TimeDiscrepancy;
+  me_Pins::TOutputPin TestPin;
+
+  me_RunTime::Init();
+  me_RunTime::Start();
+  TestPin.Init(TestPinNumber);
+  TestPin.Write(0);
+
+  while (true)
+  {
+    StartTime = me_RunTime::GetTime_Precise();
+
+    EndTime = StartTime;
+    me_Duration::Add(&EndTime, Delay);
+
+    TestPin.Write(1);
+    do
+    {
+      CurTime = me_RunTime::GetTime_Precise();
+    } while (me_Duration::IsLess(CurTime, EndTime));
+    TestPin.Write(0);
+
+    TimeDiscrepancy = CurTime;
+    me_Duration::Subtract(&TimeDiscrepancy, EndTime);
+
+    if (me_Duration::IsGreater(TimeDiscrepancy, AcceptedDiscrepancy))
+    {
+      PrintTimestamp("Time discrepancy", TimeDiscrepancy);
+      PrintTimestamp("Start time", StartTime);
+      PrintTimestamp("End time", EndTime);
+      PrintTimestamp("Current time", CurTime);
+      Console.Print("");
+    }
   }
 
   me_RunTime::Stop();
@@ -74,6 +131,8 @@ void setup()
   MeasureTime_Test();
   Console.Unindent();
   Console.Print(") Done");
+
+  DetectLargeDelays_InfTest();
 }
 
 void loop()
@@ -83,4 +142,5 @@ void loop()
 /*
   2025 # # # #
   2025-10-23
+  2025-10-29
 */
