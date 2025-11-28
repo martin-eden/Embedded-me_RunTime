@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-23
+  Last mod.: 2025-11-28
 */
 
 /*
@@ -23,8 +23,6 @@ namespace me_RunTime
   me_Duration::TDuration GetTime();
   me_Duration::TDuration GetTime_Precise();
 
-  void SetTime(me_Duration::TDuration);
-
   namespace Freetown
   {
     TUint_2 CalcMicros(TUint_1 CounterValue, TUint_1 CounterLimit);
@@ -37,4 +35,5 @@ namespace me_RunTime
   2025-09-23
   2025-09-24
   2025-10-23
+  2025-11-28 Removed SetTime()
 */

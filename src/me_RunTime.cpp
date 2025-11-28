@@ -75,20 +75,7 @@ const me_Duration::TDuration TimeAdvancement = { 0, 0, 1, 0 };
 */
 me_Duration::TDuration me_RunTime::GetTime()
 {
-  me_Duration::TDuration Result;
-  TUint_1 PrevSreg;
-
-  PrevSreg = SREG;
-  cli();
-
-  Result.KiloS = RunTime.KiloS;
-  Result.S = RunTime.S;
-  Result.MilliS = RunTime.MilliS;
-  Result.MicroS = 0;
-
-  SREG = PrevSreg;
-
-  return Result;
+  return me_Duration::GetVolatile(RunTime);
 }
 
 /*
@@ -142,37 +129,15 @@ me_Duration::TDuration me_RunTime::GetTime_Precise()
 }
 
 /*
-  Set time as duration record
-
-  Microseconds part is ignored.
-*/
-void me_RunTime::SetTime(
-  me_Duration::TDuration Ts
-)
-{
-  TUint_1 PrevSreg;
-
-  PrevSreg = SREG;
-  cli();
-
-  RunTime.KiloS = Ts.KiloS;
-  RunTime.S = Ts.S;
-  RunTime.MilliS = Ts.MilliS;
-  RunTime.MicroS = 0;
-
-  SREG = PrevSreg;
-}
-
-/*
   [Interrupt handler] Advance tracked time
 */
 void OnNextMs_I()
 {
   me_Duration::TDuration CurTime;
 
-  CurTime = GetTime();
+  CurTime = me_Duration::GetVolatile(RunTime);
   me_Duration::WrappedAdd(&CurTime, TimeAdvancement);
-  SetTime(CurTime);
+  me_Duration::SetVolatile(RunTime, CurTime);
 }
 
 /*
