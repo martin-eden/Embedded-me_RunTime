@@ -28,7 +28,7 @@ void MeasureTime_Test()
 {
   const TUint_1 NumRuns = 12;
   const TUint_1 TestPinNumber = 6;
-  const me_Duration::TDuration Delay = { 0, 0, 80, 0 };
+  const me_Duration::TDuration Delay = { 0, 1, 0, 0 };
 
   me_Duration::TDuration StartTime;
   me_Duration::TDuration EndTime;
