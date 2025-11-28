@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-28
+  Last mod.: 2025-11-28
 */
 
 /*
@@ -64,7 +64,7 @@
 
 using namespace me_RunTime;
 
-volatile me_Duration::TDuration RunTime = me_Duration::Zero;
+volatile me_Duration::TDuration RunTime = me_Duration::MinValue;
 const TUint_4 TimerFreq_Hz = 1000;
 const me_Duration::TDuration TimeAdvancement = { 0, 0, 1, 0 };
 
@@ -129,7 +129,7 @@ me_Duration::TDuration me_RunTime::GetTime_Precise()
 
       Here we'll fix copy.
     */
-    me_Duration::Add(&Result, TimeAdvancement);
+    me_Duration::WrappedAdd(&Result, TimeAdvancement);
 
     CounterValue = *Rtc.Current;
   }
@@ -171,7 +171,7 @@ void OnNextMs_I()
   me_Duration::TDuration CurTime;
 
   CurTime = GetTime();
-  me_Duration::Add(&CurTime, TimeAdvancement);
+  me_Duration::WrappedAdd(&CurTime, TimeAdvancement);
   SetTime(CurTime);
 }
 
