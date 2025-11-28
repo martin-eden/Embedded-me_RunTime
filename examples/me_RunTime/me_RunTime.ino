@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-10-29
+  Last mod.: 2025-11-28
 */
 
 #include <me_RunTime.h>
@@ -46,7 +46,7 @@ void MeasureTime_Test()
     StartTime = me_RunTime::GetTime();
 
     EndTime = StartTime;
-    me_Duration::Add(&EndTime, Delay);
+    me_Duration::WrappedAdd(&EndTime, Delay);
 
     TestPin.Write(1);
     do
@@ -97,7 +97,7 @@ void DetectLargeDelays_InfTest()
     StartTime = me_RunTime::GetTime_Precise();
 
     EndTime = StartTime;
-    me_Duration::Add(&EndTime, Delay);
+    me_Duration::WrappedAdd(&EndTime, Delay);
 
     TestPin.Write(1);
     do
@@ -107,7 +107,7 @@ void DetectLargeDelays_InfTest()
     TestPin.Write(0);
 
     TimeDiscrepancy = CurTime;
-    me_Duration::Subtract(&TimeDiscrepancy, EndTime);
+    me_Duration::CappedSub(&TimeDiscrepancy, EndTime);
 
     if (me_Duration::IsGreater(TimeDiscrepancy, AcceptedDiscrepancy))
     {
