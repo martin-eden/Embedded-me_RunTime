@@ -22,11 +22,6 @@ namespace me_RunTime
 
   me_Duration::TDuration GetTime();
   me_Duration::TDuration GetTime_Precise();
-
-  namespace Freetown
-  {
-    TUint_2 CalcMicros(TUint_1 CounterValue, TUint_1 CounterLimit);
-  }
 }
 
 /*

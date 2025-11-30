@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-11-28
+  Last mod.: 2025-11-30
 */
 
 /*
@@ -58,15 +58,29 @@
 #include <me_Counters.h>
 #include <me_Interrupts.h>
 #include <me_HardwareClockScaling.h>
+#include <me_TimerTools.h>
 
 #include <avr/common.h> // SREG
 #include <avr/interrupt.h> // cli()
 
 using namespace me_RunTime;
 
-volatile me_Duration::TDuration RunTime = me_Duration::MinValue;
-const TUint_4 TimerFreq_Hz = 1000;
-const me_Duration::TDuration TimeAdvancement = { 0, 0, 1, 0 };
+static volatile me_Duration::TDuration RunTime = {};
+static TUint_1 Prescale_PowOfTwo;
+static TUint_1 PrescaleValue;
+static me_Duration::TDuration TimeAdvancement = {};
+
+/*
+  [Interrupt handler] Advance tracked time
+*/
+void OnPeriodEnd_I()
+{
+  me_Duration::TDuration CurTime;
+
+  CurTime = me_Duration::GetVolatile(RunTime);
+  me_Duration::WrappedAdd(&CurTime, TimeAdvancement);
+  me_Duration::SetVolatile(RunTime, CurTime);
+}
 
 /*
   Get time as duration record
@@ -86,58 +100,40 @@ me_Duration::TDuration me_RunTime::GetTime()
 */
 me_Duration::TDuration me_RunTime::GetTime_Precise()
 {
-  me_Duration::TDuration Result;
-  TUint_1 PrevSreg;
-  TUint_1 CounterValue;
-  TUint_1 CounterLimit;
   me_Counters::TCounter3 Rtc;
+  me_Duration::TDuration RoughTime;
+  TUint_2 Count;
+  TUint_1 PrevSreg;
+  me_Duration::TDuration Result;
 
   PrevSreg = SREG;
   cli();
 
   Stop();
 
-  Result = GetTime();
-  CounterValue = *Rtc.Current;
+  if (Rtc.Status->Done)
+  {
+    OnPeriodEnd_I();
+    Rtc.Status->Done = true; // cleared by one
+  }
+
+  RoughTime = GetTime();
+
+  Count = *Rtc.Current;
 
   Start();
 
   SREG = PrevSreg;
 
-  if (Rtc.Status->GotMarkA)
-  {
-    /*
-      Damn, we have pending interrupt for our time advancement.
+  // At this point we have two parts of time from frozen moment
 
-      Most likely we're called from another interrupt handler
-      with higher priority.
-
-      Our time needs to be advanced. But it is done in our handler.
-
-      Here we'll fix copy.
-    */
-    me_Duration::WrappedAdd(&Result, TimeAdvancement);
-
-    CounterValue = *Rtc.Current;
-  }
-
-  CounterLimit = *Rtc.MarkA;
-
-  Result.MicroS = Freetown::CalcMicros(CounterValue, CounterLimit);
+  Result = RoughTime;
+  me_Duration::WrappedAdd(
+    &Result,
+    me_TimerTools::CounterToDuration(Count, Prescale_PowOfTwo)
+  );
 
   return Result;
-}
-
-/*
-  [Interrupt handler] Advance tracked time
-*/
-void OnNextMs_I()
-{
-  me_Duration::TDuration CurTime;
-
-  CurTime = me_Duration::GetVolatile(RunTime);
-  me_Duration::WrappedAdd(&CurTime, TimeAdvancement);
-  me_Duration::SetVolatile(RunTime, CurTime);
 }
 
 /*
@@ -151,28 +147,38 @@ void me_RunTime::Init()
   */
 
   me_HardwareClockScaling::TClockScaleSetting Spec;
-  me_HardwareClockScaling::TClockScale ClockScale;
-  me_Counters::TCounter3 Rtc;
 
-  Spec.Prescale_PowOfTwo = 6;
+  const TUint_1 SuitableTickDuration_Us = 1;
+
+  me_Counters::TCounter3 Rtc;
+  me_HardwareClockScaling::TClockScale ClockScale;
+
+  me_HardwareClockScaling::PrescaleFromTickDuration_Specs(
+    &Prescale_PowOfTwo,
+    SuitableTickDuration_Us,
+    me_HardwareClockScaling::AtMega328::GetSpecs_Counter3()
+  );
+
+  me_Counters::GetPrescaleConst_Counter3(&PrescaleValue, Prescale_PowOfTwo);
+
+  Spec.Prescale_PowOfTwo = Prescale_PowOfTwo;
   Spec.CounterNumBits = 8;
 
-  if (
-    !me_HardwareClockScaling::CalculateClockScale_Spec(
-      &ClockScale, TimerFreq_Hz, Spec
-    )
-  )
-    return;
+  me_HardwareClockScaling::SetMaxCounterValue(&ClockScale, Spec);
+
+  TimeAdvancement =
+    me_TimerTools::CounterToDuration(ClockScale.CounterLimit, Prescale_PowOfTwo);
 
   Stop();
 
-  Rtc.SetAlgorithm(me_Counters::TAlgorithm_Counter3::Count_ToMarkA);
-  *Rtc.MarkA = ClockScale.CounterLimit;
-  me_Interrupts::On_Counter3_ReachedMarkA = OnNextMs_I;
+  Rtc.SetAlgorithm(me_Counters::TAlgorithm_Counter3::Count_To2Pow8);
 
   *Rtc.Current = 0;
+  me_Interrupts::On_Counter3_ReachedHardLimit = OnPeriodEnd_I;
+  Rtc.Interrupts->OnDone = true;
+  Rtc.Status->Done = true; // cleared by one
 
-  Rtc.Interrupts->OnMarkA = true;
+  SetVolatile(RunTime, {});
 }
 
 /*
@@ -184,7 +190,7 @@ void me_RunTime::Start()
 
   me_Counters::TCounter3 Rtc;
 
-  Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::SlowBy2Pow6;
+  Rtc.Control->Speed = PrescaleValue;
 }
 
 /*
@@ -197,30 +203,6 @@ void me_RunTime::Stop()
   me_Counters::TCounter3 Rtc;
 
   Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::None;
-}
-
-/*
-  Return microseconds part
-*/
-TUint_2 me_RunTime::Freetown::CalcMicros(
-  TUint_1 CounterValue,
-  TUint_1 CounterLimit
-)
-{
-  /*
-  TUint_4 CurrentMsPart;
-
-  // Assert: Current <= Mark A
-
-  CurrentMsPart = CounterValue;
-  CurrentMsPart = CurrentMsPart * TimerFreq_Hz;
-  CurrentMsPart = CurrentMsPart / ((TUint_4) CounterLimit + 1);
-
-  return (TUint_2) CurrentMsPart;
-
-  //*/
-  return (TUint_4) TimerFreq_Hz * CounterValue / (CounterLimit + 1);
-  // return (TUint_2) CounterValue << 2;
 }
 
 /*
