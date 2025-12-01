@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-11-30
+  Last mod.: 2025-12-01
 */
 
 /*
@@ -148,7 +148,7 @@ void me_RunTime::Init()
 
   me_HardwareClockScaling::TClockScaleSetting Spec;
 
-  const TUint_1 SuitableTickDuration_Us = 1;
+  const TUint_1 SuitableTickDuration_Us = 50;
 
   me_Counters::TCounter3 Rtc;
   me_HardwareClockScaling::TClockScale ClockScale;
