@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-11-30
+  Last mod.: 2025-12-01
 */
 
 #include <me_RunTime.h>
@@ -30,6 +30,13 @@ void PrintTimestamp(
   Console.EndLine();
 }
 
+void PrintPeriod()
+{
+  Console.Write("Period");
+  me_DebugPrints::PrintDuration(me_RunTime::GetPeriodDuration());
+  Console.EndLine();
+}
+
 void MeasureTime_Test()
 {
   const TUint_1 NumRuns = 6;
@@ -42,7 +49,6 @@ void MeasureTime_Test()
 
   TestPin.Write(0);
 
-  me_RunTime::Init();
   me_RunTime::Start();
   CurTime = me_RunTime::GetTime_Precise();
   PrintTimestamp("Time after Start()", CurTime);
@@ -113,7 +119,6 @@ void DetectLargeDelays_InfTest()
   TUint_1 OrigSreg;
   TUint_2 LastHeartbeat_S = 1;
 
-  me_RunTime::Init();
   me_RunTime::Start();
 
   TestPin.Write(0);
@@ -164,12 +169,15 @@ void DetectLargeDelays_InfTest()
 void setup()
 {
   Console.Init();
-
+  me_RunTime::Init();
   TestPin.Init(TestPinNumber);
 
   Console.Print("( [me_RunTime] test");
   Console.Indent();
+
+  PrintPeriod();
   MeasureTime_Test();
+
   Console.Unindent();
   Console.Print(") Done");
 
