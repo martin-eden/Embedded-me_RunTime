@@ -205,9 +205,15 @@ void me_RunTime::Stop()
   Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::None;
 }
 
+me_Duration::TDuration me_RunTime::GetPeriodDuration()
+{
+  return TimeAdvancement;
+}
+
 /*
   2025 # # #
   2025-10-10 Switched to counter 3
   2025-10-19
   2025-10-28
+  2025-12-01
 */

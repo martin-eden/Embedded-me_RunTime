@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-11-28
+  Last mod.: 2025-12-01
 */
 
 /*
@@ -22,6 +22,8 @@ namespace me_RunTime
 
   me_Duration::TDuration GetTime();
   me_Duration::TDuration GetTime_Precise();
+
+  me_Duration::TDuration GetPeriodDuration();
 }
 
 /*
@@ -31,4 +33,5 @@ namespace me_RunTime
   2025-09-24
   2025-10-23
   2025-11-28 Removed SetTime()
+  2025-12-01 Added function to get period duration
 */
