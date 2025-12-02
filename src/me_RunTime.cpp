@@ -2,20 +2,23 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-01
+  Last mod.: 2025-12-02
 */
 
 /*
   This implementation uses hardware counter 3 (named TC2 in datasheet).
 
   Main reason for this are interrupts priorities: counter 3 interrupts
-  are served before counter 2 (and counter 1) interrupts. In interrupt
-  handler you want to have correct time.
+  are served before other counters interrupts. In interrupt handler
+  you want to have correct time.
 
   Also it can tick from external signal and stay alive in most sleep
   modes. And has best range of system clock scaling. Which makes me
-  think it's really designed for run time tracking.
+  think it's suitable for run time tracking and designed for event
+  planning.
+*/
 
+/*
   Arduino framework uses:
 
     * Counter 1 for time tracking
@@ -28,27 +31,11 @@
 */
 
 /*
-  We're using "duration" record for time keeping. This record
-  is only accessed by GetTime() and SetTime().
+  Counter used here is simple thing
 
-  We're setting hardware counter to emit interrupt every millisecond.
-  At interrupt handler we're advancing run time.
-
-  For special case of fine tracking milliseconds, we're providing
-  GetMicros(). It has granularity of 4 us.
-
-  Mind that hardware counter runs even when interrupts are disabled.
-  So GetMicros() will advance if counter is not stopped.
-*/
-
-/*
-  Counter is simple thing
-
-  It advances from from 0 to "Mark A" every "tick". "Tick" is scaled
-  system clock. When it reaches mark A we're getting hardware interrupt.
-
-  We want to set mark A to such value that it takes exactly
-  one milli-second to reach it.
+  It advances from from 0 to 255 every "tick". "Tick" is scaled
+  system clock. After 255 it goes to 0 and raised "overflow"
+  interrupt flag.
 */
 
 #include <me_RunTime.h>
@@ -83,9 +70,11 @@ void OnPeriodEnd_I()
 }
 
 /*
-  Get time as duration record
+  Get time
 
-  Microseconds part is not filled, so precision is one millisecond.
+  Current period part is not processed.
+
+  So less precision but less overhead and no side effects.
 */
 me_Duration::TDuration me_RunTime::GetTime()
 {
@@ -93,10 +82,15 @@ me_Duration::TDuration me_RunTime::GetTime()
 }
 
 /*
-  Get time with microsecond precision
+  Get precise time
 
-  Each use of this functions increases gap between real time and
-  tracked time.
+  Current period part is processed.
+
+  So maximum possible precision but overhead and side effects.
+
+  Side effects is that every call of this function stops
+  time tracking for some (small) time. So it increases
+  discrepancy between "real" and tracked time.
 */
 me_Duration::TDuration me_RunTime::GetTime_Precise()
 {
@@ -142,8 +136,9 @@ me_Duration::TDuration me_RunTime::GetTime_Precise()
 void me_RunTime::Init()
 {
   /*
-    Sets counter mode, limit and "limit reached" interrupt.
-    Sets current value to zero.
+    Sets counter mode to "count till max" and "overflow" event handler.
+
+    Resets counter to zero.
   */
 
   me_HardwareClockScaling::TClockScaleSetting Spec;
@@ -173,10 +168,11 @@ void me_RunTime::Init()
 
   Rtc.SetAlgorithm(me_Counters::TAlgorithm_Counter3::Count_To2Pow8);
 
-  *Rtc.Current = 0;
   me_Interrupts::On_Counter3_ReachedHardLimit = OnPeriodEnd_I;
   Rtc.Interrupts->OnDone = true;
   Rtc.Status->Done = true; // cleared by one
+
+  *Rtc.Current = 0;
 
   SetVolatile(RunTime, {});
 }
@@ -205,6 +201,9 @@ void me_RunTime::Stop()
   Rtc.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::None;
 }
 
+/*
+  Return internal period duration
+*/
 me_Duration::TDuration me_RunTime::GetPeriodDuration()
 {
   return TimeAdvancement;
