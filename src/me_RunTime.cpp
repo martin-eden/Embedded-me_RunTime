@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-02
+  Last mod.: 2025-12-08
 */
 
 /*
@@ -28,13 +28,19 @@
     * Counter 3 for tone() function
 
       See <Tone.cpp>.
+
+  Our framework uses:
+
+    * Counter 1 for wave generation. See [me_FrequencyGenerator]
+    * Counter 2 for signal capture. See [me_DigitalSignalRecorder]
+    * Counter 3 for time tracking. See [me_RunTime]
 */
 
 /*
   Counter used here is simple thing
 
   It advances from from 0 to 255 every "tick". "Tick" is scaled
-  system clock. After 255 it goes to 0 and raised "overflow"
+  system clock. After 255 it goes to 0 and raises "overflow"
   interrupt flag.
 */
 
