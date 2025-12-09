@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-08
+  Last mod.: 2025-12-09
 */
 
 /*
@@ -55,6 +55,8 @@
 
 #include <avr/common.h> // SREG
 #include <avr/interrupt.h> // cli()
+
+#include <me_Clock.h>
 
 using namespace me_RunTime;
 
@@ -160,7 +162,7 @@ void me_RunTime::Init()
     me_HardwareClockScaling::AtMega328::GetSpecs_Counter3()
   );
 
-  me_Counters::GetPrescaleConst_Counter3(&PrescaleValue, Prescale_PowOfTwo);
+  me_Counters::Prescale_HwFromSw_Counter3(&PrescaleValue, Prescale_PowOfTwo);
 
   Spec.Prescale_PowOfTwo = Prescale_PowOfTwo;
   Spec.CounterNumBits = 8;
