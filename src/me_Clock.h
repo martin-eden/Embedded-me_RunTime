@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-08
+  Last mod.: 2025-12-09
 */
 
 /*
@@ -41,7 +41,7 @@ namespace me_Clock
   void Stop();
 
   me_Duration::TDuration GetTime();
-  me_Duration::TDuration GetTickDuration();
+  me_Duration::TDuration GetPeriodDuration();
   TUint_2 GetPrecision_Us();
 }
 

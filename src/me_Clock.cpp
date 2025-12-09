@@ -187,7 +187,7 @@ me_Duration::TDuration me_Clock::GetTime()
   Counter uses "internal ticks". Several internal ticks will become
   "external tick". Here we returning it's duration.
 */
-me_Duration::TDuration me_Clock::GetTickDuration()
+me_Duration::TDuration me_Clock::GetPeriodDuration()
 {
   return TimeAdvancement;
 }
@@ -199,9 +199,19 @@ me_Duration::TDuration me_Clock::GetTickDuration()
 */
 TUint_2 me_Clock::GetPrecision_Us()
 {
-  return 0;
+  TUint_1 Prescale_PowOfTwo;
+  me_Duration::TDuration Tick;
+  TUint_4 Tick_Us;
+
+  me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue);
+  Tick = me_TimerTools::CounterToDuration(1, Prescale_PowOfTwo);
+
+  me_Duration::DurationToMicros(&Tick_Us, Tick);
+
+  return (TUint_2) Tick_Us;
 }
 
 /*
   2025-12-08
+  2025-12-09
 */
