@@ -34,17 +34,18 @@ namespace me_Clock
 
     Point of this interface is use "Duration" time record.
 
-    Also we provide our internal and external precision.
+    Also we provide our internal precision.
   */
   TBool Init(TUint_2 WishedPrecision_Us);
   void Start();
   void Stop();
 
   me_Duration::TDuration GetTime();
-  me_Duration::TDuration GetPeriodDuration();
+
   TUint_2 GetPrecision_Us();
 }
 
 /*
   2025-12-08
+  2025-12-10
 */

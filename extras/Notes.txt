@@ -16,3 +16,53 @@
     - you've disabled all interrupts
 
 ) 2025-08-15, 2025-10-10
+
+(
+  Wrote parallel implementation of time tracking.
+  Almost same code, almost same size -- near 220 lines.
+
+  Looks like this module can't be made simpler.
+) 2025-12-10
+
+( Comments I don't yet dare to delete
+
+  /*
+    This implementation uses hardware counter 3 (named TC2 in datasheet).
+
+    Main reason for this are interrupts priorities: counter 3 interrupts
+    are served before other counters interrupts. In interrupt handler
+    you want to have correct time.
+
+    Also it can tick from external signal and stay alive in most sleep
+    modes. And has best range of system clock scaling. Which makes me
+    think it's suitable for run time tracking and designed for event
+    planning.
+  */
+
+  /*
+    Arduino framework uses:
+
+      * Counter 1 for time tracking
+
+        See <wiring.c>. I don't know why. Ask David Mellis from 2005.
+
+      * Counter 3 for tone() function
+
+        See <Tone.cpp>.
+
+    Our framework uses:
+
+      * Counter 1 for wave generation. See [me_FrequencyGenerator]
+      * Counter 2 for signal capture. See [me_DigitalSignalRecorder]
+      * Counter 3 for time tracking. See [me_RunTime]
+  */
+
+  /*
+    Counter used here is simple thing
+
+    It advances from from 0 to 255 every "tick". "Tick" is scaled
+    system clock. After 255 it goes to 0 and raises "overflow"
+    interrupt flag.
+  */
+
+) 2025-12-10

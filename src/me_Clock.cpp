@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-09
+  Last mod.: 2025-12-10
 */
 
 /*
@@ -170,7 +170,8 @@ me_Duration::TDuration me_Clock::GetTime()
 
   // At this point we have two parts of time from frozen moment
 
-  me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue);
+  if (!me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue))
+    return RoughTime;
 
   Result = RoughTime;
   me_Duration::WrappedAdd(
@@ -179,17 +180,6 @@ me_Duration::TDuration me_Clock::GetTime()
   );
 
   return Result;
-}
-
-/*
-  Get duration of external tick
-
-  Counter uses "internal ticks". Several internal ticks will become
-  "external tick". Here we returning it's duration.
-*/
-me_Duration::TDuration me_Clock::GetPeriodDuration()
-{
-  return TimeAdvancement;
 }
 
 /*

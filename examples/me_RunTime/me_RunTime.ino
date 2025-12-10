@@ -26,13 +26,6 @@ void PrintTimestamp(
   Console.EndLine();
 }
 
-void PrintPeriod()
-{
-  Console.Write("Period");
-  me_DebugPrints::PrintDuration(me_RunTime::GetPeriodDuration());
-  Console.EndLine();
-}
-
 void MeasureTime_Test()
 {
   const TUint_1 NumRuns = 6;
@@ -43,7 +36,7 @@ void MeasureTime_Test()
   me_Duration::TDuration CurTime;
   TUint_1 RunNumber;
 
-  CurTime = me_RunTime::GetTime_Precise();
+  CurTime = me_RunTime::GetTime();
   PrintTimestamp("Time after Start()", CurTime);
 
   for (RunNumber = 1; RunNumber <= NumRuns; ++RunNumber)
@@ -72,7 +65,6 @@ void setup()
   Console.Print("( [me_RunTime] test");
   Console.Indent();
 
-  PrintPeriod();
   MeasureTime_Test();
 
   Console.Unindent();
