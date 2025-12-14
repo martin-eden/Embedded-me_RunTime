@@ -90,7 +90,7 @@ TBool me_Clock::Init(
 
   // ( Calculate time advancement
   HwDur.Prescale_PowOfTwo = Prescale_PowOfTwo;
-  HwDur.CounterLimit = TUint_1_Max;
+  HwDur.Scale_BaseOne = TUint_1_Max;
 
   TimeAdvancement = me_HardwareClockScaling::HwToSwDuration(HwDur);
   // )
