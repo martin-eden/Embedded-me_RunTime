@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-10
+  Last mod.: 2025-12-14
 */
 
 /*
@@ -19,7 +19,6 @@
 #include <me_Duration.h>
 #include <me_Counters.h>
 #include <me_HardwareClockScaling.h>
-#include <me_TimerTools.h>
 #include <me_Interrupts.h>
 
 using namespace me_Clock;
@@ -93,7 +92,7 @@ TBool me_Clock::Init(
   HwDur.Prescale_PowOfTwo = Prescale_PowOfTwo;
   HwDur.CounterLimit = TUint_1_Max;
 
-  TimeAdvancement = me_TimerTools::HwToSwDuration(HwDur);
+  TimeAdvancement = me_HardwareClockScaling::HwToSwDuration(HwDur);
   // )
 
   // ( Setup counter
@@ -176,7 +175,7 @@ me_Duration::TDuration me_Clock::GetTime()
   Result = RoughTime;
   me_Duration::WrappedAdd(
     &Result,
-    me_TimerTools::CounterToDuration(Count, Prescale_PowOfTwo)
+    me_HardwareClockScaling::CounterToDuration(Count, Prescale_PowOfTwo)
   );
 
   return Result;
@@ -194,7 +193,7 @@ TUint_2 me_Clock::GetPrecision_Us()
   TUint_4 Tick_Us;
 
   me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue);
-  Tick = me_TimerTools::CounterToDuration(1, Prescale_PowOfTwo);
+  Tick = me_HardwareClockScaling::CounterToDuration(1, Prescale_PowOfTwo);
 
   me_Duration::DurationToMicros(&Tick_Us, Tick);
 
