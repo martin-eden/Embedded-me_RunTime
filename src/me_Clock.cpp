@@ -71,7 +71,7 @@ TBool me_Clock::Init(
     (
       !
         me_HardwareClockScaling::
-        PrescaleFromTickDuration_Specs(
+        GetPrescaleForTickDuration_Specs(
           &Prescale_PowOfTwo,
           WishedPrecision_Us,
           me_HardwareClockScaling::AtMega328::GetSpecs_Counter3()
@@ -149,8 +149,8 @@ me_Duration::TDuration me_Clock::GetTime()
     of counter. It is stopped and then started in this function.
   */
   me_Duration::TDuration RoughTime;
-  TUint_2 Count;
-  TUint_1 Prescale_PowOfTwo;
+  me_Duration::TDuration FinePart;
+  me_HardwareClockScaling::THardwareDuration HwDur;
   me_Duration::TDuration Result;
 
   me_Clock::Stop();
@@ -163,20 +163,23 @@ me_Duration::TDuration me_Clock::GetTime()
 
   RoughTime = me_Duration::GetVolatile(ElapsedTime);
 
-  Count = *Counter.Current;
+  HwDur.Scale_BaseOne = *Counter.Current;
 
   me_Clock::Start();
 
   // At this point we have two parts of time from frozen moment
 
-  if (!me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue))
+  if (
+    !me_Counters::Prescale_SwFromHw_Counter3(
+      &HwDur.Prescale_PowOfTwo, SpeedValue
+    )
+  )
     return RoughTime;
 
+  FinePart = me_HardwareClockScaling::HwToSwDuration(HwDur);
+
   Result = RoughTime;
-  me_Duration::WrappedAdd(
-    &Result,
-    me_HardwareClockScaling::CounterToDuration(Count, Prescale_PowOfTwo)
-  );
+  me_Duration::WrappedAdd(&Result, FinePart);
 
   return Result;
 }
@@ -188,12 +191,14 @@ me_Duration::TDuration me_Clock::GetTime()
 */
 TUint_2 me_Clock::GetPrecision_Us()
 {
-  TUint_1 Prescale_PowOfTwo;
+  me_HardwareClockScaling::THardwareDuration HwDur;
   me_Duration::TDuration Tick;
   TUint_4 Tick_Us;
 
-  me_Counters::Prescale_SwFromHw_Counter3(&Prescale_PowOfTwo, SpeedValue);
-  Tick = me_HardwareClockScaling::CounterToDuration(1, Prescale_PowOfTwo);
+  HwDur.Scale_BaseOne = 0;
+  me_Counters::Prescale_SwFromHw_Counter3(&HwDur.Prescale_PowOfTwo, SpeedValue);
+
+  Tick = me_HardwareClockScaling::HwToSwDuration(HwDur);
 
   me_Duration::DurationToMicros(&Tick_Us, Tick);
 
