@@ -24,8 +24,7 @@ void PrintTimestamp(
   me_Duration::TDuration Timestamp;
 
   me_Duration::DurationFromMicros(&Timestamp, Timestamp_Us);
-  Console.Write(Annotation);
-  me_DebugPrints::PrintDuration(Timestamp);
+  me_DebugPrints::PrintDuration(Annotation, Timestamp);
   Console.EndLine();
 }
 
