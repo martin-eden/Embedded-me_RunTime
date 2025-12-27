@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-10
+  Last mod.: 2025-12-27
 */
 
 /*
@@ -12,7 +12,6 @@
 #pragma once
 
 #include <me_BaseTypes.h>
-#include <me_Duration.h>
 
 namespace me_RunTime
 {
@@ -20,7 +19,7 @@ namespace me_RunTime
   void Start();
   void Stop();
 
-  me_Duration::TDuration GetTime();
+  TUint_4 GetTime_Us();
 }
 
 /*

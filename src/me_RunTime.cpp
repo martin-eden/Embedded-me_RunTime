@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-10
+  Last mod.: 2025-12-27
 */
 
 /*
@@ -14,7 +14,6 @@
 #include <me_RunTime.h>
 
 #include <me_BaseTypes.h>
-#include <me_Duration.h>
 #include <me_Clock.h>
 
 using namespace me_RunTime;
@@ -22,9 +21,9 @@ using namespace me_RunTime;
 /*
   Get time
 */
-me_Duration::TDuration me_RunTime::GetTime()
+TUint_4 me_RunTime::GetTime_Us()
 {
-  return me_Clock::GetTime();
+  return me_Clock::GetTime_Us();
 }
 
 /*
@@ -35,7 +34,7 @@ void me_RunTime::Init()
   const TUint_1 WishedTickDuration_Us = 50;
 
   me_Clock::Init(WishedTickDuration_Us);
-  me_RunTime::Start();
+  me_Clock::Start();
 }
 
 /*

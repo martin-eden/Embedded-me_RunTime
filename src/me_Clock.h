@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-09
+  Last mod.: 2025-12-27
 */
 
 /*
@@ -25,14 +25,11 @@
 #pragma once
 
 #include <me_BaseTypes.h>
-#include <me_Duration.h>
 
 namespace me_Clock
 {
   /*
     Clock - get current time
-
-    Point of this interface is use "Duration" time record.
 
     Also we provide our internal precision.
   */
@@ -40,7 +37,7 @@ namespace me_Clock
   void Start();
   void Stop();
 
-  me_Duration::TDuration GetTime();
+  TUint_4 GetTime_Us();
 
   TUint_2 GetPrecision_Us();
 }
@@ -48,4 +45,5 @@ namespace me_Clock
 /*
   2025-12-08
   2025-12-10
+  2025-12-27
 */

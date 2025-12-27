@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-10
+  Last mod.: 2025-12-27
 */
 
 #include <me_RunTime.h>
@@ -18,41 +18,42 @@ const TUint_1 TestPinNumber = 6;
 
 void PrintTimestamp(
   TAsciiz Annotation,
-  me_Duration::TDuration Ts
+  TUint_4 Timestamp_Us
 )
 {
+  me_Duration::TDuration Timestamp;
+
+  me_Duration::DurationFromMicros(&Timestamp, Timestamp_Us);
   Console.Write(Annotation);
-  me_DebugPrints::PrintDuration(Ts);
+  me_DebugPrints::PrintDuration(Timestamp);
   Console.EndLine();
 }
 
 void MeasureTime_Test()
 {
   const TUint_1 NumRuns = 6;
-  const me_Duration::TDuration Delay = { 0, 1, 0, 0 };
+  const TUint_4 Delay_Us = 1000000;
 
-  me_Duration::TDuration StartTime;
-  me_Duration::TDuration EndTime;
-  me_Duration::TDuration CurTime;
+  TUint_4 StartTime_Us;
+  TUint_4 EndTime_Us;
+  TUint_4 CurTime_Us;
   TUint_1 RunNumber;
 
-  CurTime = me_RunTime::GetTime();
-  PrintTimestamp("Time after Start()", CurTime);
+  CurTime_Us = me_RunTime::GetTime_Us();
+  PrintTimestamp("Time after Start()", CurTime_Us);
 
   for (RunNumber = 1; RunNumber <= NumRuns; ++RunNumber)
   {
-    StartTime = me_RunTime::GetTime();
+    StartTime_Us = me_RunTime::GetTime_Us();
+    EndTime_Us = StartTime_Us + Delay_Us;
 
-    EndTime = StartTime;
-    me_Duration::WrappedAdd(&EndTime, Delay);
-
-    do
+    while (CurTime_Us < EndTime_Us)
     {
       me_Delays::Delay_Ms(1);
-      CurTime = me_RunTime::GetTime();
-    } while (me_Duration::IsLess(CurTime, EndTime));
+      CurTime_Us = me_RunTime::GetTime_Us();
+    }
 
-    PrintTimestamp("CurTime", CurTime);
+    PrintTimestamp("Current time", CurTime_Us);
   }
 }
 

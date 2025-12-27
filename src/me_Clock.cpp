@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-14
+  Last mod.: 2025-12-27
 */
 
 /*
@@ -16,7 +16,6 @@
 #include <me_Clock.h>
 
 #include <me_BaseTypes.h>
-#include <me_Duration.h>
 #include <me_Counters.h>
 #include <me_HardwareClockScaling.h>
 #include <me_Interrupts.h>
@@ -28,16 +27,13 @@ using namespace me_Clock;
 
   It needs to know current time and time advancement.
 */
-static volatile me_Duration::TDuration ElapsedTime = {};
-static me_Duration::TDuration TimeAdvancement = {};
+static volatile TUint_4 ElapsedTime_Us = 0;
+static TUint_4 TimeAdvancement_Us = 0;
 
+// [Internal] [Interrupt handler] Called when timer reaches limit
 static void OnPeriodEnd_I()
 {
-  me_Duration::TDuration CurTime;
-
-  CurTime = me_Duration::GetVolatile(ElapsedTime);
-  me_Duration::WrappedAdd(&CurTime, TimeAdvancement);
-  me_Duration::SetVolatile(ElapsedTime, CurTime);
+  ElapsedTime_Us = ElapsedTime_Us + TimeAdvancement_Us;
 }
 
 // Counter's hardware interface. Global here for less variable declarations.
@@ -92,7 +88,7 @@ TBool me_Clock::Init(
   HwDur.Prescale_PowOfTwo = Prescale_PowOfTwo;
   HwDur.Scale_BaseOne = TUint_1_Max;
 
-  TimeAdvancement = me_HardwareClockScaling::HwToSwDuration(HwDur);
+  TimeAdvancement_Us = me_HardwareClockScaling::MicrosFromHwDuration(HwDur);
   // )
 
   // ( Setup counter
@@ -104,7 +100,7 @@ TBool me_Clock::Init(
 
   // ( Set time to zero
   *Counter.Current = 0;
-  me_Duration::SetVolatile(ElapsedTime, {});
+  ElapsedTime_Us = 0;
   // )
 
   return true;
@@ -129,16 +125,16 @@ void me_Clock::Stop()
 /*
   Return elapsed time
 */
-me_Duration::TDuration me_Clock::GetTime()
+TUint_4 me_Clock::GetTime_Us()
 {
   /*
-    Time consists of two parts: big-endian TDuration record and
+    Time consists of two parts: big-endian record and
     little-endian Current TUint_2 value from counter.
 
-    To get time we need to get Current and combine it with TDuration.
+    To get time we need to get Current and combine it with main record.
     At the moment of capture we need these parts be consistent.
-    Because hardware timer advances up to every system clock tick and
-    setting interrupt flags, we want to briefly pause it when capturing
+    Because hardware timer advances every system clock tick and
+    sets interrupt flags, we want to briefly pause it while capturing
     two pieces.
 
     Side effect is that every call of this function "slows down"
@@ -148,10 +144,9 @@ me_Duration::TDuration me_Clock::GetTime()
     Implementation does not bother to restore on/off state
     of counter. It is stopped and then started in this function.
   */
-  me_Duration::TDuration RoughTime;
-  me_Duration::TDuration FinePart;
+  TUint_4 RoughTime_Us;
+  TUint_4 FinePart_Us;
   me_HardwareClockScaling::THardwareDuration HwDur;
-  me_Duration::TDuration Result;
 
   me_Clock::Stop();
 
@@ -161,7 +156,7 @@ me_Duration::TDuration me_Clock::GetTime()
     Counter.Status->Done = true; // cleared by one
   }
 
-  RoughTime = me_Duration::GetVolatile(ElapsedTime);
+  RoughTime_Us = ElapsedTime_Us;
 
   HwDur.Scale_BaseOne = *Counter.Current;
 
@@ -174,14 +169,11 @@ me_Duration::TDuration me_Clock::GetTime()
       &HwDur.Prescale_PowOfTwo, SpeedValue
     )
   )
-    return RoughTime;
+    return RoughTime_Us;
 
-  FinePart = me_HardwareClockScaling::HwToSwDuration(HwDur);
+  FinePart_Us = me_HardwareClockScaling::MicrosFromHwDuration(HwDur);
 
-  Result = RoughTime;
-  me_Duration::WrappedAdd(&Result, FinePart);
-
-  return Result;
+  return RoughTime_Us + FinePart_Us;
 }
 
 /*
@@ -192,17 +184,11 @@ me_Duration::TDuration me_Clock::GetTime()
 TUint_2 me_Clock::GetPrecision_Us()
 {
   me_HardwareClockScaling::THardwareDuration HwDur;
-  me_Duration::TDuration Tick;
-  TUint_4 Tick_Us;
 
   HwDur.Scale_BaseOne = 0;
   me_Counters::Prescale_SwFromHw_Counter3(&HwDur.Prescale_PowOfTwo, SpeedValue);
 
-  Tick = me_HardwareClockScaling::HwToSwDuration(HwDur);
-
-  me_Duration::DurationToMicros(&Tick_Us, Tick);
-
-  return (TUint_2) Tick_Us;
+  return (TUint_2) me_HardwareClockScaling::MicrosFromHwDuration(HwDur);
 }
 
 /*
