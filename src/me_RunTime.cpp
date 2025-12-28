@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-27
+  Last mod.: 2025-12-29
 */
 
 /*
@@ -31,7 +31,18 @@ TUint_4 me_RunTime::GetTime_Us()
 */
 void me_RunTime::Init()
 {
-  const TUint_1 WishedTickDuration_Us = 50;
+  /*
+    Tick duration
+
+    Longer tick - rarer called update routine.
+    Shorter tick - precision for time tracking.
+
+    As general-purpose clock we want longest possible tick - 64 us.
+
+    But currently [me_ModulatedSignalPlayer] relies on us and
+    is not happy with 64 us jitter. So staying under 4 us for him.
+  */
+  const TUint_1 WishedTickDuration_Us = 2;
 
   me_Clock::Init(WishedTickDuration_Us);
   me_Clock::Start();
