@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-27
+  Last mod.: 2025-12-29
 */
 
 #include <me_RunTime.h>
@@ -10,21 +10,15 @@
 #include <me_BaseTypes.h>
 #include <me_Console.h>
 
-#include <me_Duration.h>
 #include <me_DebugPrints.h>
 #include <me_Delays.h>
-
-const TUint_1 TestPinNumber = 6;
 
 void PrintTimestamp(
   TAsciiz Annotation,
   TUint_4 Timestamp_Us
 )
 {
-  me_Duration::TDuration Timestamp;
-
-  me_Duration::DurationFromMicros(&Timestamp, Timestamp_Us);
-  me_DebugPrints::PrintDuration(Annotation, Timestamp);
+  me_DebugPrints::PrintDuration_Us(Annotation, Timestamp_Us);
   Console.EndLine();
 }
 
