@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-27
+  Last mod.: 2026-01-10
 */
 
 /*
@@ -19,7 +19,7 @@
 
     Clock
 
-      Counter specialization. Uses durations. Provides elapsed time.
+      Counter specialization. Uses time units. Provides elapsed time.
 */
 
 #pragma once
@@ -36,9 +36,7 @@ namespace me_Clock
   TBool Init(TUint_2 WishedPrecision_Us);
   void Start();
   void Stop();
-
   TUint_4 GetTime_Us();
-
   TUint_2 GetPrecision_Us();
 }
 
