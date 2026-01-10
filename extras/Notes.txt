@@ -66,3 +66,70 @@
   */
 
 ) 2025-12-10
+
+(
+  Modes nomenclature
+
+  Datasheet lists several (stupid) mode names: "Normal", "CTC",
+  "Fast PWM", "Phase correct PWM" and finally "Phase and frequency
+  correct PWM".
+
+  I have no idea how ".. and frequency" mode differs from "phase" mode.
+  But for other's below is my explanation.
+
+  (Examples are for 8-bit counters. For 16-bit counters use 0xFFFF
+  where appropriate.)
+
+  * Single-slope
+
+    | for i = 1 to N
+
+    * Normal
+
+      | > ()
+      | for i = 1 to 0xFF
+      | Event_Done()
+
+    * CTC ((c)lear (t)imer on (c)ompare match)
+
+      | > (N)
+      | for i = 1 to N
+      | Event_Done()
+
+    * Fast PWM
+
+      | > (M N)
+      | for i = 1 to N
+      |   if (i == M)
+      |     Event_PassedPoint()
+      | Event_Done()
+
+  * Dual-slope
+
+    | for i = 1 to N
+    | for i = N - 1 downto 1
+
+    * Phase correct PWM
+
+      | > (M N)
+      | for i = 1 to N
+      |   if (i == M)
+      |     Event_PassedPoint(Up)
+      | for i = N - 1 downto 1
+      |   if (i == M)
+      |     Event_PassedPoint(Down)
+      | Event_Done()
+
+  "Events" here are hardware actions on counter's pin. They can be
+  configured to "set", "clear", "toggle" and "nothing" on output pin's
+  digital value.
+
+  Also "events" set interrupt flags, so your code can be called.
+
+  That's not complete explanation. Loop limit values can be changed
+  at runtime. And how many iterations will actually be done depends
+  of new and current loop limit value. But that's too specific details
+  for those who wish rugged PWM emitter that allows dynamic duty cycle
+  (and maybe even frequency) changes without messing up current wave.
+
+) 2026-01-10
