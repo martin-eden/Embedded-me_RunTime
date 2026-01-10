@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2025-12-27
+  Last mod.: 2026-01-10
 */
 
 /*
@@ -30,7 +30,7 @@ using namespace me_Clock;
 static volatile TUint_4 ElapsedTime_Us = 0;
 static TUint_4 TimeAdvancement_Us = 0;
 
-// [Internal] [Interrupt handler] Called when timer reaches limit
+// [Internal] [Interrupt handler] Called when counter reaches limit
 static void OnPeriodEnd_I()
 {
   ElapsedTime_Us = ElapsedTime_Us + TimeAdvancement_Us;
@@ -128,14 +128,14 @@ void me_Clock::Stop()
 TUint_4 me_Clock::GetTime_Us()
 {
   /*
-    Time consists of two parts: big-endian record and
-    little-endian Current TUint_2 value from counter.
+    Time consists of two parts: big-endian part from variable and
+    little-endian value from hardware counter.
 
-    To get time we need to get Current and combine it with main record.
-    At the moment of capture we need these parts be consistent.
-    Because hardware timer advances every system clock tick and
-    sets interrupt flags, we want to briefly pause it while capturing
-    two pieces.
+    To get time we need to get little-endian and combine it with main
+    record. At the moment of capture we need these parts to be
+    consistent. Because hardware timer advances every system clock tick
+    and sets interrupt flags, we want to briefly pause it while
+    capturing two pieces.
 
     Side effect is that every call of this function "slows down"
     tracked time increasing gap to real time. Do not call in as delay
@@ -150,6 +150,7 @@ TUint_4 me_Clock::GetTime_Us()
 
   me_Clock::Stop();
 
+  // If needed, execute interrupt handler to advance big-endian
   if (Counter.Status->Done)
   {
     OnPeriodEnd_I();
