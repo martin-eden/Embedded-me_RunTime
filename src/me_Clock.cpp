@@ -2,7 +2,7 @@
 
 /*
   Author: Martin Eden
-  Last mod.: 2026-01-10
+  Last mod.: 2026-02-12
 */
 
 /*
@@ -37,7 +37,7 @@ static void OnPeriodEnd_I()
 }
 
 // Counter's hardware interface. Global here for less variable declarations.
-static me_Counters::TCounter3 Counter;
+static me_Counters::Counter3::TCounter Counter;
 
 /*
   Calculated speed value to resume clock
@@ -67,19 +67,19 @@ TBool me_Clock::Init(
     (
       !
         me_HardwareClockScaling::
-        GetPrescaleForTickDuration_Specs(
-          &Prescale_PowOfTwo,
-          WishedPrecision_Us,
-          me_HardwareClockScaling::AtMega328::GetSpecs_Counter3()
-        )
-    )
+          GetPrescaleForTickDuration_Specs(
+            &Prescale_PowOfTwo,
+            WishedPrecision_Us,
+            me_HardwareClockScaling::AtMega328::GetSpecs_Counter3()
+          )
+      )
     return false;
 
   if
     (
       !
-        me_Counters::
-        Prescale_HwFromSw_Counter3(&SpeedValue, Prescale_PowOfTwo)
+        me_Counters::Counter3::
+          Prescale_HwFromSw(&SpeedValue, Prescale_PowOfTwo)
     )
     return false;
   // )
@@ -92,7 +92,7 @@ TBool me_Clock::Init(
   // )
 
   // ( Setup counter
-  Counter.SetAlgorithm(me_Counters::TAlgorithm_Counter3::Count_To2Pow8);
+  Counter.SetAlgorithm(me_Counters::Counter3::TAlgorithm::Count_To2Pow8);
   me_Interrupts::On_Counter3_ReachedHardLimit = OnPeriodEnd_I;
   Counter.Status->Done = true; // cleared by one
   Counter.Interrupts->OnDone = true;
@@ -119,7 +119,7 @@ void me_Clock::Start()
 */
 void me_Clock::Stop()
 {
-  Counter.Control->Speed = (TUint_1) me_Counters::TSpeed_Counter3::None;
+  Counter.Control->Speed = (TUint_1) me_Counters::Counter3::TSpeed::None;
 }
 
 /*
@@ -166,10 +166,9 @@ TUint_4 me_Clock::GetTime_Us()
   // At this point we have two parts of time from frozen moment
 
   if (
-    !me_Counters::Prescale_SwFromHw_Counter3(
-      &HwDur.Prescale_PowOfTwo, SpeedValue
+    ! me_Counters::Counter3::
+      Prescale_SwFromHw(&HwDur.Prescale_PowOfTwo, SpeedValue)
     )
-  )
     return RoughTime_Us;
 
   FinePart_Us = me_HardwareClockScaling::MicrosFromHwDuration(HwDur);
@@ -187,7 +186,7 @@ TUint_2 me_Clock::GetPrecision_Us()
   me_HardwareClockScaling::THardwareDuration HwDur;
 
   HwDur.Scale_BaseOne = 0;
-  me_Counters::Prescale_SwFromHw_Counter3(&HwDur.Prescale_PowOfTwo, SpeedValue);
+  me_Counters::Counter3::Prescale_SwFromHw(&HwDur.Prescale_PowOfTwo, SpeedValue);
 
   return (TUint_2) me_HardwareClockScaling::MicrosFromHwDuration(HwDur);
 }
